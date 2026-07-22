@@ -9,6 +9,12 @@ import { ExternalLink } from '@lucide/vue'
     <p>{{ $locale.sfc.privacyBody }}</p>
     <h2>{{ $locale.sfc.giftFsrs }}</h2>
     <p>{{ $locale.sfc.giftFsrsBody }}</p>
+    <p>
+      <a href="https://github.com/tamaina/fukushu/blob/main/docs/gift-support.md" target="_blank" rel="noopener noreferrer">
+        {{ $locale.sfc.aboutGiftSupport }}
+        <ExternalLink :size="15" aria-hidden="true" />
+      </a>
+    </p>
     <h2>{{ $locale.sfc.openSource }}</h2>
     <p>{{ $locale.sfc.openSourceBody }}</p>
     <section>
@@ -47,6 +53,7 @@ privacy: プライバシー
 privacyBody: 問題集と学習履歴はIndexedDBを使ってこの端末内だけに保存され、サーバーへアップロードされません。ブラウザデータを削除すると失われる可能性があるため、設定画面から定期的にJSONバックアップを保存してください。
 giftFsrs: GIFTとFSRS
 giftFsrsBody: GIFTはMoodleなどで利用される問題交換形式です。FSRSは回答結果から次に復習する日時を計算する間隔反復アルゴリズムです。
+aboutGiftSupport: サポートされているGIFT構文について
 openSource: オープンソース
 openSourceBody: Vue、Vue Router、ts-fsrs、idb、DOMPurify、Marked、Lucide、Valibotなどを利用しています。各ライブラリはそれぞれのライセンスに従います。
 production: 制作
@@ -61,6 +68,7 @@ privacy: Privacy
 privacyBody: Decks and study history stay on this device in IndexedDB and are never uploaded. Browser data can be lost, so regularly save a JSON backup from Settings.
 giftFsrs: GIFT and FSRS
 giftFsrsBody: GIFT is a question exchange format used by Moodle and other tools. FSRS schedules the next review from your answers.
+aboutGiftSupport: About supported GIFT syntax
 openSource: Open source
 openSourceBody: Built with Vue, Vue Router, ts-fsrs, idb, DOMPurify, Marked, Lucide, Valibot, and other libraries under their respective licenses.
 production: Production
