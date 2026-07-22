@@ -1,0 +1,42 @@
+{
+  "name": "app",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "deploy": "wrangler deploy",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint src tests vite.config.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fukushu/gift-parser": "workspace:*",
+    "@lucide/vue": "^1.25.0",
+    "dompurify": "^3.2.0",
+    "idb": "^8.0.0",
+    "marked": "^15.0.0",
+    "ts-fsrs": "^5.0.0",
+    "valibot": "^1.0.0",
+    "vite-plugin-pwa": "^1.0.0",
+    "workbox-window": "^7.3.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.0.0",
+    "@playwright/test": "^1.50.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/language-core": "^3.3.0",
+    "@vue/test-utils": "^2.4.0",
+    "fake-indexeddb": "^6.0.0",
+    "jsdom": "^26.0.0",
+    "vite": "^8.0.0",
+    "vite-vue-internationalization": "^1.1.3",
+    "vitest": "^4.0.0",
+    "vue-tsc": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

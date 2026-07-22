@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "vitest/globals"]
+  },
+  "include": ["src", "tests", "vite.config.ts"],
+  "vueCompilerOptions": {
+    "plugins": [
+      {
+        "name": "vite-vue-internationalization/volar",
+        "primaryLocale": "ja-JP",
+        "sfcTransform": "locale-sources",
+        "messageSyntax": "icu",
+        "buildStrategy": "virtual"
+      }
+    ]
+  }
+}

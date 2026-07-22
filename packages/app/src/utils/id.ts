@@ -1,0 +1,5 @@
+export const createId = (): string => crypto.randomUUID()
+export async function sha256(value: string): Promise<string> {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
