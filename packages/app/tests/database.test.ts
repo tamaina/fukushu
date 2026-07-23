@@ -39,11 +39,34 @@ describe('IndexedDB repositories', () => {
       },
     })
     await legacy.put('questions', { id: 'q', deckId: 'd', sourceKey: 'q', enabled: true })
+    await legacy.put('questions', {
+      id: 'q-late',
+      deckId: 'd',
+      sourceKey: 'q-late',
+      enabled: true,
+      payload: { sourceRange: { start: { offset: 100 } } },
+    })
+    await legacy.put('questions', {
+      id: 'q-early',
+      deckId: 'd',
+      sourceKey: 'q-early',
+      enabled: true,
+      payload: { sourceRange: { start: { offset: 10 } } },
+    })
     await legacy.put('studyStates', { questionId: 'q', deckId: 'd', suspended: false })
     await legacy.put('decks', { id: 'd', name: 'legacy' })
     legacy.close()
     const migrated = await openFukushuDatabase(name)
     expect((await migrated.get('questions', 'q'))?.enabledKey).toBe(1)
+    expect(
+      (
+        await migrated.getAllFromIndex(
+          'questions',
+          'by-deck-order',
+          globalThis.IDBKeyRange.bound(['d', 0], ['d', Number.MAX_SAFE_INTEGER]),
+        )
+      ).map((question) => question.id),
+    ).toEqual(['q-early', 'q-late', 'q'])
     expect((await migrated.get('studyStates', 'q'))?.suspendedKey).toBe(0)
     expect((await migrated.get('decks', 'd'))?.studyMode).toBe('quiz')
     migrated.close()
@@ -68,6 +91,33 @@ describe('IndexedDB repositories', () => {
     expect((await stateRepository.all())[0]?.card.reps).toBe(0)
   })
 
+  it('preserves GIFT source order across imports and reordered updates', async () => {
+    const deckId = await saveNewDeck(
+      'ordered',
+      await previewGift(
+        '::one::First {TRUE}\n\n::two::Second {TRUE}\n\n::three::Third {TRUE}',
+        createId(),
+      ),
+    )
+    expect(
+      (await questionRepository.byDeck(deckId)).map((question) => question.payload.name),
+    ).toEqual(['one', 'two', 'three'])
+    expect(
+      (await questionRepository.byDeck(deckId)).map((question) => question.sourceOrder),
+    ).toEqual([0, 1, 2])
+
+    await updateDeck(
+      deckId,
+      await previewGift(
+        '::three::Third {TRUE}\n\n::one::First {TRUE}\n\n::two::Second {TRUE}',
+        deckId,
+      ),
+    )
+    expect(
+      (await questionRepository.byDeck(deckId)).map((question) => question.payload.name),
+    ).toEqual(['three', 'one', 'two'])
+  })
+
   it('round-trips a validated backup', async () => {
     const preview = await previewGift('Q {TRUE}', createId())
     await saveNewDeck('backup', preview)
@@ -83,11 +133,14 @@ describe('IndexedDB repositories', () => {
     const backup = await createBackup()
     const legacyBackup = structuredClone(backup) as unknown as {
       decks: Array<Record<string, unknown>>
+      questions: Array<Record<string, unknown>>
     }
     delete legacyBackup.decks[0]!.studyMode
+    delete legacyBackup.questions[0]!.sourceOrder
     await clearDatabase()
     await restoreBackup(legacyBackup)
     expect((await deckRepository.all())[0]?.studyMode).toBe('quiz')
+    expect((await questionRepository.byDeck(backup.decks[0]!.id))[0]?.sourceOrder).toBe(0)
   })
 
   it('rejects an invalid backup before writing', async () => {

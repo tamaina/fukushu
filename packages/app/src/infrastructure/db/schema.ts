@@ -41,6 +41,7 @@ export interface QuestionRecord {
   id: string
   deckId: string
   sourceKey: string
+  sourceOrder: number
   kind: QuizQuestion['kind']
   payload: QuizQuestion
   enabled: boolean
@@ -95,6 +96,7 @@ export interface FukushuDb extends DBSchema {
     value: QuestionRecord
     indexes: {
       'by-deck': string
+      'by-deck-order': [string, number]
       'by-deck-source': [string, string]
       'by-deck-enabled': [string, number]
     }

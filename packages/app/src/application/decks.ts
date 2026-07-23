@@ -36,10 +36,11 @@ export async function saveNewDeck(
     questionCount: preview.questions.length,
     enabledQuestionCount: preview.questions.length,
   }
-  const questions: QuestionRecord[] = preview.questions.map((payload) => ({
+  const questions: QuestionRecord[] = preview.questions.map((payload, sourceOrder) => ({
     id: payload.id,
     deckId: id,
     sourceKey: payload.sourceKey,
+    sourceOrder,
     kind: payload.kind,
     payload,
     enabled: true,
@@ -172,7 +173,7 @@ export async function updateDeck(deckId: string, preview: ImportPreview): Promis
   const questions: QuestionRecord[] = []
   const states: StudyStateRecord[] = []
   const retained = new Set<string>()
-  for (const incoming of preview.questions) {
+  for (const [sourceOrder, incoming] of preview.questions.entries()) {
     const previous = byKey.get(incoming.sourceKey)
     if (!previous) {
       const payload = { ...incoming, deckId }
@@ -180,6 +181,7 @@ export async function updateDeck(deckId: string, preview: ImportPreview): Promis
         id: payload.id,
         deckId,
         sourceKey: payload.sourceKey,
+        sourceOrder,
         kind: payload.kind,
         payload,
         enabled: true,
@@ -202,6 +204,7 @@ export async function updateDeck(deckId: string, preview: ImportPreview): Promis
     const compatible = !diff.resetSourceKeys.includes(payload.sourceKey)
     questions.push({
       ...previous,
+      sourceOrder,
       kind: payload.kind,
       payload,
       enabled: true,
@@ -223,8 +226,14 @@ export async function updateDeck(deckId: string, preview: ImportPreview): Promis
     )
   }
   const removed = existing.filter((question) => !retained.has(question.id))
-  for (const question of removed) {
-    questions.push({ ...question, enabled: false, enabledKey: 0, updatedAt: now })
+  for (const [removedIndex, question] of removed.entries()) {
+    questions.push({
+      ...question,
+      sourceOrder: preview.questions.length + removedIndex,
+      enabled: false,
+      enabledKey: 0,
+      updatedAt: now,
+    })
     const state = await stateRepository.get(question.id)
     if (state) states.push({ ...state, suspended: true, suspendedKey: 1, updatedAt: now })
   }

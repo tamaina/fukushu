@@ -15,12 +15,13 @@ let current: Promise<IDBPDatabase<FukushuDb>> | undefined
 // Vue may pass reactive proxies through application services; IndexedDB cannot clone proxies.
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<FukushuDb>> {
-  return openDB<FukushuDb>(name, 3, {
+  return openDB<FukushuDb>(name, 4, {
     upgrade(db, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         db.createObjectStore('decks', { keyPath: 'id' })
         const questions = db.createObjectStore('questions', { keyPath: 'id' })
         questions.createIndex('by-deck', 'deckId')
+        questions.createIndex('by-deck-order', ['deckId', 'sourceOrder'])
         questions.createIndex('by-deck-source', ['deckId', 'sourceKey'], { unique: true })
         questions.createIndex('by-deck-enabled', ['deckId', 'enabledKey'])
         const states = db.createObjectStore('studyStates', { keyPath: 'questionId' })
@@ -36,14 +37,6 @@ export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<Fukush
         imports.createIndex('by-deck', 'deckId')
       }
       if (oldVersion > 0 && oldVersion < 2) {
-        const questions = transaction.objectStore('questions')
-        void questions.openCursor().then(async function migrateQuestion(cursor): Promise<void> {
-          if (!cursor) return
-          const value = cursor.value
-          if (value.enabledKey === undefined)
-            await cursor.update({ ...value, enabledKey: value.enabled ? 1 : 0 })
-          await cursor.continue().then(migrateQuestion)
-        })
         const states = transaction.objectStore('studyStates')
         void states.openCursor().then(async function migrateState(cursor): Promise<void> {
           if (!cursor) return
@@ -60,6 +53,24 @@ export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<Fukush
           const value = cursor.value
           if (value.studyMode === undefined) await cursor.update({ ...value, studyMode: 'quiz' })
           await cursor.continue().then(migrateDeck)
+        })
+      }
+      if (oldVersion > 0 && oldVersion < 4) {
+        const questions = transaction.objectStore('questions')
+        questions.createIndex('by-deck-order', ['deckId', 'sourceOrder'])
+        void questions.openCursor().then(async function migrateQuestion(cursor): Promise<void> {
+          if (!cursor) return
+          const value = cursor.value
+          await cursor.update({
+            ...value,
+            ...(value.enabledKey === undefined ? { enabledKey: value.enabled ? 1 : 0 } : {}),
+            ...(value.sourceOrder === undefined
+              ? {
+                  sourceOrder: value.payload?.sourceRange?.start.offset ?? Number.MAX_SAFE_INTEGER,
+                }
+              : {}),
+          })
+          await cursor.continue().then(migrateQuestion)
         })
       }
     },
@@ -107,8 +118,10 @@ export const deckRepository = {
   },
 }
 export const questionRepository = {
-  byDeck: async (deckId: string): Promise<QuestionRecord[]> =>
-    (await database()).getAllFromIndex('questions', 'by-deck', deckId),
+  byDeck: async (deckId: string): Promise<QuestionRecord[]> => {
+    const range = globalThis.IDBKeyRange.bound([deckId, 0], [deckId, Number.MAX_SAFE_INTEGER])
+    return (await database()).getAllFromIndex('questions', 'by-deck-order', range)
+  },
   get: async (id: string): Promise<QuestionRecord | undefined> =>
     (await database()).get('questions', id),
   put: async (value: QuestionRecord): Promise<void> => {

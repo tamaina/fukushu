@@ -156,6 +156,7 @@ const QuestionSchema = v.strictObject({
   id: v.string(),
   deckId: v.string(),
   sourceKey: v.string(),
+  sourceOrder: v.optional(integer()),
   kind: v.picklist([
     'single-choice',
     'multiple-choice',
@@ -207,11 +208,14 @@ function validateRelations(backup: AppBackup): void {
   const deckIds = new Set(backup.decks.map((deck) => deck.id))
   const questionIds = new Set<string>()
   const sourceKeys = new Set<string>()
+  const sourceOrders = new Set<string>()
   for (const question of backup.questions) {
     if (!deckIds.has(question.deckId)) throw new Error('Question references an unknown deck.')
     if (questionIds.has(question.id)) throw new Error('Duplicate question ID.')
     const composite = `${question.deckId}\u0000${question.sourceKey}`
     if (sourceKeys.has(composite)) throw new Error('Duplicate source key in a deck.')
+    const orderComposite = `${question.deckId}\u0000${question.sourceOrder}`
+    if (sourceOrders.has(orderComposite)) throw new Error('Duplicate source order in a deck.')
     if (
       question.payload.id !== question.id ||
       question.payload.deckId !== question.deckId ||
@@ -221,6 +225,7 @@ function validateRelations(backup: AppBackup): void {
     }
     questionIds.add(question.id)
     sourceKeys.add(composite)
+    sourceOrders.add(orderComposite)
   }
   const stateIds = new Set<string>()
   for (const state of backup.studyStates) {
@@ -233,6 +238,25 @@ function validateRelations(backup: AppBackup): void {
     if (!questionIds.has(log.questionId) || !deckIds.has(log.deckId))
       throw new Error('Review log references unknown data.')
   }
+}
+
+function restoreQuestionOrder(questions: QuestionRecord[]): QuestionRecord[] {
+  const byDeck = new Map<string, QuestionRecord[]>()
+  for (const question of questions) {
+    const deckQuestions = byDeck.get(question.deckId) ?? []
+    deckQuestions.push(question)
+    byDeck.set(question.deckId, deckQuestions)
+  }
+  return [...byDeck.values()].flatMap((deckQuestions) => {
+    if (deckQuestions.every((question) => question.sourceOrder !== undefined)) return deckQuestions
+    return [...deckQuestions]
+      .sort(
+        (left, right) =>
+          (left.payload.sourceRange?.start.offset ?? Number.MAX_SAFE_INTEGER) -
+          (right.payload.sourceRange?.start.offset ?? Number.MAX_SAFE_INTEGER),
+      )
+      .map((question, sourceOrder) => ({ ...question, sourceOrder }))
+  })
 }
 
 export async function createBackup(): Promise<AppBackup> {
@@ -251,7 +275,11 @@ export async function createBackup(): Promise<AppBackup> {
 }
 
 export async function restoreBackup(value: unknown): Promise<void> {
-  const parsed = v.parse(BackupSchema, value) as AppBackup
+  const validated = v.parse(BackupSchema, value) as AppBackup
+  const parsed: AppBackup = {
+    ...validated,
+    questions: restoreQuestionOrder(validated.questions),
+  }
   validateRelations(parsed)
   const db = await database()
   const tx = db.transaction(

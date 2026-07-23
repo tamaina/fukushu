@@ -65,6 +65,7 @@ describe('grading', () => {
       id: 'q',
       deckId: 'd',
       sourceKey: 'q',
+      sourceOrder: 0,
       kind: payload.kind,
       payload,
       enabled: true,
