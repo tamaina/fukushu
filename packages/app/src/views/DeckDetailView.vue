@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Download, Flame, Play, Trash2 } from '@lucide/vue'
+import { Download, Flame, Play, RotateCcw, Trash2 } from '@lucide/vue'
+import QuestionPreviewPopover from '../components/QuestionPreviewPopover.vue'
 import { deckRepository, questionRepository, reviewRepository } from '../infrastructure/db/database'
 import { resetDeckHistory, setDeckStudyMode, setQuestionEnabled } from '../application/decks'
-import type { DeckRecord, QuestionRecord } from '../infrastructure/db/schema'
+import type { DeckRecord, QuestionRecord, ReviewLogRecord } from '../infrastructure/db/schema'
+
+type RatingCounts = Record<ReviewLogRecord['rating'], number>
+
 const route = useRoute()
 const router = useRouter()
 const deck = ref<DeckRecord>()
 const questions = ref<QuestionRecord[]>([])
 const answerCounts = ref<Record<string, number>>({})
+const ratingCounts = ref<Record<string, RatingCounts>>({})
+const latestRatings = ref<Record<string, ReviewLogRecord['rating']>>({})
+const resetDialog = ref<{ showModal: () => void; close: () => void }>()
+const deleteDialog = ref<{ showModal: () => void; close: () => void }>()
+const resetting = ref(false)
+const deleting = ref(false)
 const category = ref('')
 const deckId = String(route.params.deckId)
 const categories = computed(() => [
@@ -23,12 +33,24 @@ const visible = computed(() =>
 async function load(): Promise<void> {
   deck.value = await deckRepository.get(deckId)
   questions.value = await questionRepository.byDeck(deckId)
-  answerCounts.value = (await reviewRepository.all())
-    .filter((log) => log.deckId === deckId)
-    .reduce<Record<string, number>>((counts, log) => {
-      counts[log.questionId] = (counts[log.questionId] ?? 0) + 1
-      return counts
-    }, {})
+  const logs = (await reviewRepository.all()).filter((log) => log.deckId === deckId)
+  answerCounts.value = logs.reduce<Record<string, number>>((counts, log) => {
+    counts[log.questionId] = (counts[log.questionId] ?? 0) + 1
+    return counts
+  }, {})
+  ratingCounts.value = logs.reduce<Record<string, RatingCounts>>((counts, log) => {
+    counts[log.questionId] ??= { again: 0, hard: 0, good: 0, easy: 0 }
+    counts[log.questionId]![log.rating] += 1
+    return counts
+  }, {})
+  const latestLogs = logs.reduce<Record<string, ReviewLogRecord>>((latest, log) => {
+    const current = latest[log.questionId]
+    if (!current || current.reviewedAt < log.reviewedAt) latest[log.questionId] = log
+    return latest
+  }, {})
+  latestRatings.value = Object.fromEntries(
+    Object.entries(latestLogs).map(([questionId, log]) => [questionId, log.rating]),
+  )
 }
 async function toggle(question: QuestionRecord): Promise<void> {
   await setQuestionEnabled(question.id, !question.enabled)
@@ -39,13 +61,21 @@ async function changeStudyMode(): Promise<void> {
   await setDeckStudyMode(deck.value.id, deck.value.studyMode)
 }
 async function remove(): Promise<void> {
-  if (!deck.value || !confirm($l.value.sfc.removeConfirm({ name: deck.value.name }))) return
+  if (!deck.value || deleting.value) return
+  deleting.value = true
   await deckRepository.remove(deckId)
   await router.push('/decks')
 }
 async function resetHistory(): Promise<void> {
-  if (!confirm($locale.value.sfc.resetConfirm)) return
-  await resetDeckHistory(deckId)
+  if (resetting.value) return
+  resetting.value = true
+  try {
+    await resetDeckHistory(deckId)
+    await load()
+    resetDialog.value?.close()
+  } finally {
+    resetting.value = false
+  }
 }
 function exportGift(): void {
   if (!deck.value?.sourceText) return
@@ -91,6 +121,12 @@ onMounted(load)
           <RouterLink class="button secondary" :to="`/import?deck=${deck.id}`">{{
             $locale.sfc.updateGift
           }}</RouterLink>
+          <button class="secondary" @click="resetDialog?.showModal()">
+            <RotateCcw aria-hidden="true" />{{ $locale.sfc.resetButton }}
+          </button>
+          <button class="secondary danger-outline" @click="deleteDialog?.showModal()">
+            <Trash2 aria-hidden="true" />{{ $locale.sfc.deleteButton }}
+          </button>
         </div>
       </div>
     </div>
@@ -145,26 +181,90 @@ onMounted(load)
             </div>
           </div>
           <div class="question-actions">
-            <small>{{ $l.sfc.answers({ count: answerCounts[question.id] ?? 0 }) }}</small>
-            <button class="secondary compact" @click="toggle(question)">
-              {{ question.enabled ? $locale.sfc.disable : $locale.sfc.enable }}
-            </button>
+            <div class="question-stats">
+              <small>{{ $l.sfc.answers({ count: answerCounts[question.id] ?? 0 }) }}</small>
+              <div
+                class="question-ratings"
+                :aria-label="
+                  $l.sfc.ratingSummary({
+                    again: ratingCounts[question.id]?.again ?? 0,
+                    hard: ratingCounts[question.id]?.hard ?? 0,
+                    good: ratingCounts[question.id]?.good ?? 0,
+                    easy: ratingCounts[question.id]?.easy ?? 0,
+                  })
+                "
+              >
+                <span
+                  class="rating-pill again"
+                  :class="{ active: latestRatings[question.id] === 'again' }"
+                  >{{ $locale.sfc.again }} {{ ratingCounts[question.id]?.again ?? 0 }}</span
+                >
+                <span
+                  class="rating-pill hard"
+                  :class="{ active: latestRatings[question.id] === 'hard' }"
+                  >{{ $locale.sfc.hard }} {{ ratingCounts[question.id]?.hard ?? 0 }}</span
+                >
+                <span
+                  class="rating-pill good"
+                  :class="{ active: latestRatings[question.id] === 'good' }"
+                  >{{ $locale.sfc.good }} {{ ratingCounts[question.id]?.good ?? 0 }}</span
+                >
+                <span
+                  class="rating-pill easy"
+                  :class="{ active: latestRatings[question.id] === 'easy' }"
+                  >{{ $locale.sfc.easy }} {{ ratingCounts[question.id]?.easy ?? 0 }}</span
+                >
+              </div>
+            </div>
+            <div class="question-controls">
+              <QuestionPreviewPopover :question="question.payload" />
+              <button class="secondary compact" @click="toggle(question)">
+                {{ question.enabled ? $locale.sfc.disable : $locale.sfc.enable }}
+              </button>
+            </div>
           </div>
         </li>
       </ul>
     </section>
-    <section class="danger-zone">
-      <h2>{{ $locale.sfc.resetHistory }}</h2>
+    <dialog
+      ref="resetDialog"
+      class="confirmation-dialog"
+      aria-labelledby="reset-dialog-title"
+      @click.self.stop="resetDialog?.close()"
+    >
+      <h2 id="reset-dialog-title">{{ $locale.sfc.resetHistory }}</h2>
       <p>{{ $locale.sfc.resetHistoryIntro }}</p>
-      <button class="secondary" @click="resetHistory">{{ $locale.sfc.resetButton }}</button>
-    </section>
-    <section class="danger-zone">
-      <h2>{{ $locale.sfc.deleteDeck }}</h2>
+      <div class="actions confirmation-dialog-actions">
+        <button class="secondary" :disabled="resetting" @click="resetDialog?.close()">
+          {{ $locale.sfc.cancel }}
+        </button>
+        <button class="danger" :disabled="resetting" @click="resetHistory">
+          <RotateCcw aria-hidden="true" />{{
+            resetting ? $locale.sfc.resetting : $locale.sfc.resetButton
+          }}
+        </button>
+      </div>
+    </dialog>
+    <dialog
+      ref="deleteDialog"
+      class="confirmation-dialog"
+      aria-labelledby="delete-dialog-title"
+      @click.self.stop="deleteDialog?.close()"
+    >
+      <h2 id="delete-dialog-title">{{ $locale.sfc.deleteDeck }}</h2>
       <p>{{ $locale.sfc.deleteDeckIntro }}</p>
-      <button class="danger" @click="remove">
-        <Trash2 aria-hidden="true" />{{ $locale.sfc.deleteButton }}
-      </button>
-    </section>
+      <p class="danger-text">{{ $l.sfc.removeConfirm({ name: deck.name }) }}</p>
+      <div class="actions confirmation-dialog-actions">
+        <button class="secondary" :disabled="deleting" @click="deleteDialog?.close()">
+          {{ $locale.sfc.cancel }}
+        </button>
+        <button class="danger" :disabled="deleting" @click="remove">
+          <Trash2 aria-hidden="true" />{{
+            deleting ? $locale.sfc.deleting : $locale.sfc.deleteButton
+          }}
+        </button>
+      </div>
+    </dialog>
   </div>
   <div v-else class="page">
     <p>{{ $locale.sfc.notFound }}</p>
@@ -188,15 +288,22 @@ category: カテゴリ
 all: すべて
 uncategorized: カテゴリなし
 answers: '{count}回答'
+ratingSummary: 'Rating: もう一度 {again}、難しかった {hard}、正解 {good}、簡単 {easy}'
+again: もう一度
+hard: 難
+good: 正解
+easy: 簡単
 disable: 停止する
 enable: 再開する
 resetHistory: 学習履歴のリセット
 resetHistoryIntro: 問題は残し、この問題集のFSRS状態と回答履歴を未学習へ戻します。
 resetButton: 履歴をリセット
-resetConfirm: この問題集の学習状態と履歴をリセットしますか？
+resetting: リセット中…
 deleteDeck: 問題集の削除
 deleteDeckIntro: 問題と、この問題集に紐づく学習履歴を削除します。
-deleteButton: 削除する
+deleteButton: 問題集を削除
+deleting: 削除中…
+cancel: キャンセル
 removeConfirm: '「{name}」と学習履歴を削除しますか？'
 notFound: 問題集が見つかりません。
 </locale>
@@ -218,15 +325,22 @@ category: Category
 all: All
 uncategorized: Uncategorized
 answers: '{count, plural, one {# answer} other {# answers}}'
+ratingSummary: 'Rating: Again {again}, Hard {hard}, Good {good}, Easy {easy}'
+again: Again
+hard: Hard
+good: Good
+easy: Easy
 disable: Disable
 enable: Enable
 resetHistory: Reset study history
 resetHistoryIntro: Keep the questions but return their FSRS state and answer history to unstudied.
 resetButton: Reset history
-resetConfirm: Reset the study state and history for this deck?
+resetting: Resetting…
 deleteDeck: Delete deck
 deleteDeckIntro: Delete the questions and all study history linked to this deck.
-deleteButton: Delete
+deleteButton: Delete deck
+deleting: Deleting…
+cancel: Cancel
 removeConfirm: 'Delete "{name}" and its study history?'
 notFound: Deck not found.
 </locale>
