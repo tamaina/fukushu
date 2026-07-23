@@ -16,7 +16,7 @@ import { openFukushuDatabase } from '../src/infrastructure/db/database'
 afterEach(async () => clearDatabase())
 
 describe('IndexedDB repositories', () => {
-  it('migrates legacy boolean helper keys to schema version 2', async () => {
+  it('migrates legacy helper keys and defaults decks to quiz mode', async () => {
     const name = `migration-${createId()}`
     const legacy = await openDB(name, 1, {
       upgrade(db) {
@@ -40,10 +40,12 @@ describe('IndexedDB repositories', () => {
     })
     await legacy.put('questions', { id: 'q', deckId: 'd', sourceKey: 'q', enabled: true })
     await legacy.put('studyStates', { questionId: 'q', deckId: 'd', suspended: false })
+    await legacy.put('decks', { id: 'd', name: 'legacy' })
     legacy.close()
     const migrated = await openFukushuDatabase(name)
     expect((await migrated.get('questions', 'q'))?.enabledKey).toBe(1)
     expect((await migrated.get('studyStates', 'q'))?.suspendedKey).toBe(0)
+    expect((await migrated.get('decks', 'd'))?.studyMode).toBe('quiz')
     migrated.close()
     await deleteDB(name)
   })
@@ -61,6 +63,7 @@ describe('IndexedDB repositories', () => {
     )
     const preview = await previewGift('Q {=yes ~no}', createId())
     const id = await saveNewDeck('test', preview)
+    expect((await deckRepository.get(id))?.studyMode).toBe('quiz')
     expect(await questionRepository.byDeck(id)).toHaveLength(1)
     expect((await stateRepository.all())[0]?.card.reps).toBe(0)
   })
@@ -73,6 +76,18 @@ describe('IndexedDB repositories', () => {
     await restoreBackup(backup)
     expect((await deckRepository.all())[0]?.name).toBe('backup')
     expect(await questionRepository.byDeck(backup.decks[0]!.id)).toHaveLength(1)
+  })
+
+  it('restores version 1 backups created before study modes as quiz decks', async () => {
+    await saveNewDeck('legacy backup', await previewGift('Q {TRUE}', createId()))
+    const backup = await createBackup()
+    const legacyBackup = structuredClone(backup) as unknown as {
+      decks: Array<Record<string, unknown>>
+    }
+    delete legacyBackup.decks[0]!.studyMode
+    await clearDatabase()
+    await restoreBackup(legacyBackup)
+    expect((await deckRepository.all())[0]?.studyMode).toBe('quiz')
   })
 
   it('rejects an invalid backup before writing', async () => {

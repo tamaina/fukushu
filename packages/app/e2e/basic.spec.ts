@@ -44,6 +44,24 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await expect(page.getByText('基本問題')).toBeVisible()
 })
 
+test('can switch a deck to flashcard mode and self-rate the revealed answer', async ({ page }) => {
+  await page.goto('/import')
+  await page.getByLabel('問題集名').fill('単語帳')
+  await page.getByLabel('GIFTテキスト').fill('日本の首都は? {=東京 ~大阪}')
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await page.getByRole('radio', { name: /単語帳/ }).check()
+  await page.getByRole('link', { name: 'この問題集を学習' }).click()
+  await expect(page.getByText('東京', { exact: true })).toBeHidden()
+  await expect(page.getByText('大阪', { exact: true })).toBeHidden()
+  await page.getByRole('button', { name: '答えを見る' }).click()
+  await expect(page.getByRole('heading', { name: '正答' })).toBeVisible()
+  await expect(page.getByText('東京', { exact: true })).toBeVisible()
+  await expect(page.getByText('大阪', { exact: true })).toBeHidden()
+  await page.getByRole('button', { name: 'わかった' }).click()
+  await expect(page.getByRole('heading', { name: '今日の学習は完了です' })).toBeVisible()
+})
+
 test('accepts a decimal numerical answer with Enter', async ({ page }) => {
   await page.goto('/import')
   await page.getByLabel('問題集名').fill('数値問題')

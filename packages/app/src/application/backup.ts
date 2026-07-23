@@ -142,6 +142,7 @@ const DeckSchema = v.strictObject({
   id: v.string(),
   name: v.string(),
   description: v.optional(v.string()),
+  studyMode: v.optional(v.picklist(['flashcard', 'quiz']), 'quiz'),
   sourceType: v.literal('gift'),
   sourceFileName: v.optional(v.string()),
   sourceHash: v.string(),

@@ -26,6 +26,7 @@ export async function saveNewDeck(
   const deck: DeckRecord = {
     id,
     name: name.trim() || '名称未設定の問題集',
+    studyMode: 'quiz',
     sourceType: 'gift',
     ...(fileName ? { sourceFileName: fileName } : {}),
     sourceHash: preview.sourceHash,
@@ -276,6 +277,19 @@ export async function setQuestionEnabled(id: string, enabled: boolean): Promise<
       updatedAt: new Date().toISOString(),
     })
   }
+}
+
+export async function setDeckStudyMode(
+  id: string,
+  studyMode: DeckRecord['studyMode'],
+): Promise<void> {
+  const deck = await deckRepository.get(id)
+  if (!deck || deck.studyMode === studyMode) return
+  await deckRepository.put({
+    ...deck,
+    studyMode,
+    updatedAt: new Date().toISOString(),
+  })
 }
 
 export async function resetDeckHistory(deckId: string): Promise<void> {

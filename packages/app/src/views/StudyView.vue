@@ -8,6 +8,7 @@ import { gradeQuestion } from '../domain/quiz/grading'
 import { systemClock } from '../domain/time'
 import { ratingFromResult, review, type AppRating } from '../infrastructure/fsrs/adapter'
 import {
+  deckRepository,
   questionRepository,
   settingsRepository,
   stateRepository,
@@ -21,11 +22,13 @@ const selected = ref<string[]>([])
 const text = ref('')
 const graded = ref<GradeResult>()
 const feedbackVisible = ref(false)
+const answerVisible = ref(false)
 const started = ref(0)
 const busy = ref(false)
 const nextDue = ref('')
 const item = computed(() => queue.value[index.value])
 const question = computed(() => item.value?.question.payload)
+const isFlashcard = computed(() => item.value?.studyMode === 'flashcard')
 const backTarget = computed(() =>
   typeof route.query.deck === 'string' ? `/decks/${route.query.deck}` : '/',
 )
@@ -44,6 +47,25 @@ const correctShortAnswers = computed(() => {
   return question.value.answers
     .filter((answer) => answer.weight >= 100)
     .map((answer) => answer.value)
+})
+const correctChoices = computed(() => {
+  if (question.value?.kind !== 'single-choice' && question.value?.kind !== 'multiple-choice')
+    return []
+  if (question.value.kind === 'single-choice') {
+    const maximum = Math.max(...question.value.choices.map((choice) => choice.weight))
+    return question.value.choices.filter((choice) => choice.weight === maximum)
+  }
+  return question.value.choices.filter((choice) => choice.weight > 0)
+})
+const numericalAnswers = computed(() => {
+  if (question.value?.kind !== 'numerical') return []
+  return question.value.answers
+    .filter((answer) => answer.weight > 0)
+    .map((answer) => {
+      if (answer.type === 'exact') return String(answer.value)
+      if (answer.type === 'tolerance') return `${answer.value} ± ${answer.tolerance}`
+      return `${answer.min}〜${answer.max}`
+    })
 })
 const sessionKey = 'fukushu-study-session-v1'
 function toggle(id: string): void {
@@ -89,7 +111,7 @@ function gradeOnEnter(event: {
   if (canAnswer.value && !graded.value) void grade()
 }
 async function rate(rating: AppRating): Promise<void> {
-  if (!item.value || !graded.value) return
+  if (!item.value || (!isFlashcard.value && !graded.value)) return
   busy.value = true
   const answer =
     question.value?.kind === 'short-answer' || question.value?.kind === 'numerical'
@@ -98,8 +120,8 @@ async function rate(rating: AppRating): Promise<void> {
   await recordReview(
     item.value,
     rating,
-    graded.value.correct,
-    answer,
+    isFlashcard.value ? rating !== 'again' : graded.value!.correct,
+    isFlashcard.value ? [] : answer,
     Date.now() - started.value,
     systemClock,
   )
@@ -108,6 +130,7 @@ async function rate(rating: AppRating): Promise<void> {
   text.value = ''
   graded.value = undefined
   feedbackVisible.value = false
+  answerVisible.value = false
   nextDue.value = ''
   started.value = Date.now()
   busy.value = false
@@ -141,8 +164,14 @@ onMounted(async () => {
     for (const id of restored.questionIds) {
       const question = await questionRepository.get(id)
       const state = await stateRepository.get(id)
+      const deck = question ? await deckRepository.get(question.deckId) : undefined
       if (question?.enabled && state && !state.suspended) {
-        queue.value.push({ question, state, isNew: state.card.reps === 0 })
+        queue.value.push({
+          question,
+          state,
+          isNew: state.card.reps === 0,
+          studyMode: deck?.studyMode ?? 'quiz',
+        })
       }
     }
   } else {
@@ -172,6 +201,7 @@ onMounted(async () => {
         <div>
           <span class="badge">{{ question.categoryPath.join(' / ') || 'カテゴリなし' }}</span
           ><span v-if="route.query.cram === '1'" class="badge">詰め込み学習</span
+          ><span class="badge">{{ isFlashcard ? '単語帳' : 'クイズ' }}</span
           ><span>{{ progress }}・残り {{ queue.length - index - 1 }}問</span>
         </div>
         <button class="text-button" @click="router.push(backTarget)">中断する</button>
@@ -179,95 +209,136 @@ onMounted(async () => {
       <article class="question-card">
         <h1 class="visually-hidden">問題</h1>
         <ContentRenderer :content="question.prompt" />
-        <fieldset
-          v-if="question.kind === 'single-choice' || question.kind === 'multiple-choice'"
-          class="choices"
-        >
-          <legend class="visually-hidden">選択肢</legend>
-          <label
-            v-for="choice in question.choices"
-            :key="choice.id"
-            class="choice-card"
-            :class="{
-              selected: selected.includes(choice.id),
-              correct: graded && feedbackVisible && choiceCorrect(choice),
-              incorrect:
-                graded && feedbackVisible && selected.includes(choice.id) && !choiceCorrect(choice),
-            }"
-            ><input
-              :type="question.kind === 'single-choice' ? 'radio' : 'checkbox'"
-              :name="question.id"
-              :checked="selected.includes(choice.id)"
-              :disabled="!!graded"
-              @change="toggle(choice.id)"
-            /><ContentRenderer :content="choice.content" /><span class="answer-label-group"
-              ><span v-if="graded && feedbackVisible && choiceCorrect(choice)" class="answer-label"
-                ><Check aria-hidden="true" />正答</span
-              ><span
-                v-if="graded && feedbackVisible && selected.includes(choice.id)"
+        <template v-if="!isFlashcard">
+          <fieldset
+            v-if="question.kind === 'single-choice' || question.kind === 'multiple-choice'"
+            class="choices"
+          >
+            <legend class="visually-hidden">選択肢</legend>
+            <label
+              v-for="choice in question.choices"
+              :key="choice.id"
+              class="choice-card"
+              :class="{
+                selected: selected.includes(choice.id),
+                correct: graded && feedbackVisible && choiceCorrect(choice),
+                incorrect:
+                  graded &&
+                  feedbackVisible &&
+                  selected.includes(choice.id) &&
+                  !choiceCorrect(choice),
+              }"
+              ><input
+                :type="question.kind === 'single-choice' ? 'radio' : 'checkbox'"
+                :name="question.id"
+                :checked="selected.includes(choice.id)"
+                :disabled="!!graded"
+                @change="toggle(choice.id)"
+              /><ContentRenderer :content="choice.content" /><span class="answer-label-group"
+                ><span
+                  v-if="graded && feedbackVisible && choiceCorrect(choice)"
+                  class="answer-label"
+                  ><Check aria-hidden="true" />正答</span
+                ><span
+                  v-if="graded && feedbackVisible && selected.includes(choice.id)"
+                  class="answer-label"
+                  >選択済み</span
+                ></span
+              ></label
+            >
+          </fieldset>
+          <fieldset v-else-if="question.kind === 'true-false'" class="choices">
+            <legend class="visually-hidden">正しいか誤りか</legend>
+            <label
+              v-for="option in [
+                { id: 'true', label: '正しい' },
+                { id: 'false', label: '誤り' },
+              ]"
+              :key="option.id"
+              class="choice-card"
+              :class="{
+                selected: selected.includes(option.id),
+                correct: graded && feedbackVisible && trueFalseCorrect(option.id),
+                incorrect:
+                  graded &&
+                  feedbackVisible &&
+                  selected.includes(option.id) &&
+                  !trueFalseCorrect(option.id),
+              }"
+              ><input
+                type="radio"
+                :name="question.id"
+                :value="option.id"
+                :checked="selected.includes(option.id)"
+                :disabled="!!graded"
+                @change="selected = [option.id]"
+              />{{ option.label
+              }}<span
+                v-if="graded && feedbackVisible && trueFalseCorrect(option.id)"
                 class="answer-label"
-                >選択済み</span
-              ></span
-            ></label
-          >
-        </fieldset>
-        <fieldset v-else-if="question.kind === 'true-false'" class="choices">
-          <legend class="visually-hidden">正しいか誤りか</legend>
-          <label
-            v-for="option in [
-              { id: 'true', label: '正しい' },
-              { id: 'false', label: '誤り' },
-            ]"
-            :key="option.id"
-            class="choice-card"
-            :class="{
-              selected: selected.includes(option.id),
-              correct: graded && feedbackVisible && trueFalseCorrect(option.id),
-              incorrect:
-                graded &&
-                feedbackVisible &&
-                selected.includes(option.id) &&
-                !trueFalseCorrect(option.id),
-            }"
-            ><input
-              type="radio"
-              :name="question.id"
-              :value="option.id"
-              :checked="selected.includes(option.id)"
+                ><Check aria-hidden="true" />正答</span
+              ></label
+            >
+          </fieldset>
+          <label v-else-if="question.kind === 'short-answer'"
+            >解答<input
+              v-model="text"
               :disabled="!!graded"
-              @change="selected = [option.id]"
-            />{{ option.label
-            }}<span
-              v-if="graded && feedbackVisible && trueFalseCorrect(option.id)"
-              class="answer-label"
-              ><Check aria-hidden="true" />正答</span
-            ></label
-          >
-        </fieldset>
-        <label v-else-if="question.kind === 'short-answer'"
-          >解答<input
-            v-model="text"
-            :disabled="!!graded"
-            autocomplete="off"
-            @keydown.enter="gradeOnEnter" /></label
-        ><label v-else-if="question.kind === 'numerical'"
-          >数値で解答<input
-            v-model="text"
-            :disabled="!!graded"
-            type="text"
-            inputmode="decimal"
-            @keydown.enter="gradeOnEnter"
-        /></label>
-        <div v-else class="message warning">
-          この問題形式（{{ question.sourceKind }}）は、このバージョンでは出題できません。
+              autocomplete="off"
+              @keydown.enter="gradeOnEnter" /></label
+          ><label v-else-if="question.kind === 'numerical'"
+            >数値で解答<input
+              v-model="text"
+              :disabled="!!graded"
+              type="text"
+              inputmode="decimal"
+              @keydown.enter="gradeOnEnter"
+          /></label>
+          <div v-else class="message warning">
+            この問題形式（{{ question.sourceKind }}）は、このバージョンでは出題できません。
+          </div>
+          <div v-if="!graded" class="actions">
+            <button :disabled="!canAnswer" @click="grade">回答する</button>
+          </div>
+          <div v-else-if="!feedbackVisible" class="actions">
+            <button @click="feedbackVisible = true">結果と解説を表示</button>
+          </div>
+        </template>
+        <div v-else-if="!answerVisible" class="actions">
+          <button @click="answerVisible = true">答えを見る</button>
         </div>
-        <div v-if="!graded" class="actions">
-          <button :disabled="!canAnswer" @click="grade">回答する</button>
-        </div>
-        <div v-else-if="!feedbackVisible" class="actions">
-          <button @click="feedbackVisible = true">結果と解説を表示</button>
-        </div>
-        <section v-else-if="feedbackVisible" class="feedback" aria-live="polite">
+        <section
+          v-if="isFlashcard && answerVisible"
+          class="feedback flashcard-answer"
+          aria-live="polite"
+        >
+          <h2>正答</h2>
+          <div v-if="correctChoices.length" class="correct-answer-list">
+            <div v-for="choice in correctChoices" :key="choice.id" class="message">
+              <ContentRenderer :content="choice.content" />
+            </div>
+          </div>
+          <p v-else-if="question.kind === 'true-false'">
+            {{ question.correctAnswer ? '正しい' : '誤り' }}
+          </p>
+          <p v-else-if="question.kind === 'short-answer'">
+            {{ correctShortAnswers.join(' / ') || '正答が登録されていません。' }}
+          </p>
+          <p v-else-if="question.kind === 'numerical'">
+            {{ numericalAnswers.join(' / ') || '正答が登録されていません。' }}
+          </p>
+          <div v-if="question.explanation" class="message">
+            <ContentRenderer :content="question.explanation" />
+          </div>
+          <div class="rating">
+            <p>この問題はどのくらい難しかったですか？</p>
+            <button :disabled="busy" class="secondary" @click="rate('again')">もう一度</button
+            ><button :disabled="busy" class="secondary" @click="rate('hard')">難しかった</button
+            ><button :disabled="busy" @click="rate('good')">わかった</button
+            ><button :disabled="busy" class="secondary" @click="rate('easy')">簡単</button>
+          </div>
+        </section>
+        <section v-else-if="graded && feedbackVisible" class="feedback" aria-live="polite">
           <h2 :class="graded.correct ? 'success-text' : 'danger-text'">
             <Check v-if="graded.correct" aria-hidden="true" /><X v-else aria-hidden="true" />{{
               graded.correct ? '正解' : '不正解'

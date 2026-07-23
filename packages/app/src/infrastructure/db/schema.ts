@@ -27,6 +27,7 @@ export interface DeckRecord {
   id: string
   name: string
   description?: string
+  studyMode: 'flashcard' | 'quiz'
   sourceType: 'gift'
   sourceFileName?: string
   sourceHash: string

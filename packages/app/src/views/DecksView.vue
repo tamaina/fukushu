@@ -58,7 +58,9 @@ onMounted(load)
             <strong>{{ deck.name }}</strong
             ><span
               >{{ deck.enabledQuestionCount }} / {{ deck.questionCount }}
-              {{ $locale.sfc.enabled }} · {{ $locale.sfc.studied }}
+              {{ $locale.sfc.enabled }} ·
+              {{ deck.studyMode === 'flashcard' ? '単語帳' : 'クイズ' }} ·
+              {{ $locale.sfc.studied }}
               {{ stats[deck.id]?.studied ?? 0 }} · {{ $locale.sfc.due }}
               {{ stats[deck.id]?.due ?? 0 }}</span
             ><small v-if="stats[deck.id]?.next"

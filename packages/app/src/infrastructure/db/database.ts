@@ -15,7 +15,7 @@ let current: Promise<IDBPDatabase<FukushuDb>> | undefined
 // Vue may pass reactive proxies through application services; IndexedDB cannot clone proxies.
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<FukushuDb>> {
-  return openDB<FukushuDb>(name, 2, {
+  return openDB<FukushuDb>(name, 3, {
     upgrade(db, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         db.createObjectStore('decks', { keyPath: 'id' })
@@ -51,6 +51,15 @@ export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<Fukush
           if (value.suspendedKey === undefined)
             await cursor.update({ ...value, suspendedKey: value.suspended ? 1 : 0 })
           await cursor.continue().then(migrateState)
+        })
+      }
+      if (oldVersion > 0 && oldVersion < 3) {
+        const decks = transaction.objectStore('decks')
+        void decks.openCursor().then(async function migrateDeck(cursor): Promise<void> {
+          if (!cursor) return
+          const value = cursor.value
+          if (value.studyMode === undefined) await cursor.update({ ...value, studyMode: 'quiz' })
+          await cursor.continue().then(migrateDeck)
         })
       }
     },

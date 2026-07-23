@@ -1,18 +1,25 @@
 import { getStudyDayKey, type Clock } from '../domain/time'
 import {
+  deckRepository,
   questionRepository,
   reviewRepository,
   settingsRepository,
   stateRepository,
 } from '../infrastructure/db/database'
 import { review, type AppRating } from '../infrastructure/fsrs/adapter'
-import type { QuestionRecord, ReviewLogRecord, StudyStateRecord } from '../infrastructure/db/schema'
+import type {
+  DeckRecord,
+  QuestionRecord,
+  ReviewLogRecord,
+  StudyStateRecord,
+} from '../infrastructure/db/schema'
 import { createId } from '../utils/id'
 
 export interface StudyItem {
   question: QuestionRecord
   state: StudyStateRecord
   isNew: boolean
+  studyMode: DeckRecord['studyMode']
 }
 export function prepareQuestion(question: QuestionRecord, shuffle: boolean): QuestionRecord {
   if (
@@ -41,6 +48,7 @@ export async function buildStudyQueue(
 ): Promise<StudyItem[]> {
   const now = clock.now()
   const settings = await settingsRepository.get()
+  const decks = new Map((await deckRepository.all()).map((deck) => [deck.id, deck]))
   const states = (await stateRepository.all()).filter(
     (state) => !state.suspended && (!deckId || state.deckId === deckId),
   )
@@ -54,6 +62,7 @@ export async function buildStudyQueue(
         question: prepareQuestion(question, settings.shuffleChoices),
         state,
         isNew: false,
+        studyMode: decks.get(state.deckId)?.studyMode ?? 'quiz',
       })
     }
   }
@@ -71,6 +80,7 @@ export async function buildStudyQueue(
         question: prepareQuestion(question, settings.shuffleChoices),
         state,
         isNew: true,
+        studyMode: decks.get(state.deckId)?.studyMode ?? 'quiz',
       })
     }
   }

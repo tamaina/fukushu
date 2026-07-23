@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Download, Flame, Play, Trash2 } from '@lucide/vue'
 import { deckRepository, questionRepository, reviewRepository } from '../infrastructure/db/database'
-import { resetDeckHistory, setQuestionEnabled } from '../application/decks'
+import { resetDeckHistory, setDeckStudyMode, setQuestionEnabled } from '../application/decks'
 import type { DeckRecord, QuestionRecord } from '../infrastructure/db/schema'
 const route = useRoute()
 const router = useRouter()
@@ -33,6 +33,10 @@ async function load(): Promise<void> {
 async function toggle(question: QuestionRecord): Promise<void> {
   await setQuestionEnabled(question.id, !question.enabled)
   await load()
+}
+async function changeStudyMode(): Promise<void> {
+  if (!deck.value) return
+  await setDeckStudyMode(deck.value.id, deck.value.studyMode)
 }
 async function remove(): Promise<void> {
   if (!deck.value || !confirm(`「${deck.value.name}」と学習履歴を削除しますか？`)) return
@@ -83,6 +87,29 @@ onMounted(load)
         </div>
       </div>
     </div>
+    <section class="panel">
+      <h2>学習モード</h2>
+      <p>この問題集を学習するときの回答方法を選びます。</p>
+      <fieldset class="mode-options">
+        <legend class="visually-hidden">学習モード</legend>
+        <label class="choice-card">
+          <input v-model="deck.studyMode" type="radio" value="quiz" @change="changeStudyMode" />
+          <span><strong>クイズ</strong><small>選択・入力した回答を自動採点します。</small></span>
+        </label>
+        <label class="choice-card">
+          <input
+            v-model="deck.studyMode"
+            type="radio"
+            value="flashcard"
+            @change="changeStudyMode"
+          />
+          <span
+            ><strong>単語帳</strong
+            ><small>正答を自分で確認して、感じた難しさを選びます。</small></span
+          >
+        </label>
+      </fieldset>
+    </section>
     <section>
       <div class="section-heading">
         <h2>問題一覧</h2>
