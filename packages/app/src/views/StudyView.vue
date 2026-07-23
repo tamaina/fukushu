@@ -159,7 +159,8 @@ onMounted(async () => {
     restored &&
     restored.deckId === (deckId ?? null) &&
     Boolean(restored.cram) === cram &&
-    Array.isArray(restored.questionIds)
+    Array.isArray(restored.questionIds) &&
+    restored.questionIds.length > 0
   ) {
     for (const id of restored.questionIds) {
       const question = await questionRepository.get(id)
@@ -174,13 +175,16 @@ onMounted(async () => {
         })
       }
     }
-  } else {
+  }
+  if (!queue.value.length) {
     queue.value = await buildStudyQueue(systemClock, deckId, cram)
     if (!queue.value.length && deckId && !cram) {
       cram = true
       await router.replace({ query: { ...route.query, cram: '1' } })
       queue.value = await buildStudyQueue(systemClock, deckId, true)
     }
+  }
+  if (queue.value.length) {
     sessionStorage.setItem(
       sessionKey,
       JSON.stringify({
@@ -189,7 +193,7 @@ onMounted(async () => {
         questionIds: queue.value.map((entry) => entry.question.id),
       }),
     )
-  }
+  } else sessionStorage.removeItem(sessionKey)
   index.value = 0
   started.value = Date.now()
 })

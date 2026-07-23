@@ -69,6 +69,25 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await expect(page.getByText('基本問題')).toBeVisible()
 })
 
+test('rebuilds the study queue when an empty session has become stale', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    sessionStorage.setItem(
+      'fukushu-study-session-v1',
+      JSON.stringify({ deckId: null, cram: false, questionIds: [] }),
+    )
+  })
+  await page.goto('/import')
+  await page.getByLabel('問題集名').fill('空セッション後の問題集')
+  await page.getByLabel('GIFTテキスト').fill('新しく追加した問題 {TRUE}')
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(page).toHaveURL(/\/decks\//)
+  await page.goto('/')
+  await page.getByRole('link', { name: '学習を始める' }).click()
+  await expect(page.getByText('新しく追加した問題', { exact: true })).toBeVisible()
+})
+
 test('can switch a deck to flashcard mode and self-rate the revealed answer', async ({ page }) => {
   await page.goto('/import')
   await page.getByLabel('問題集名').fill('単語帳')
