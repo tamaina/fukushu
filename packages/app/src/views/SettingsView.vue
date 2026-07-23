@@ -23,7 +23,7 @@ watch(
     await settingsRepository.put(settings.value)
     applyTheme()
     if (settings.value.locale !== loadedLocale) location.reload()
-    saved.value = '保存しました'
+    saved.value = $locale.value.sfc.saved
     window.setTimeout(() => (saved.value = ''), 1500)
   },
   { deep: true },
@@ -50,11 +50,11 @@ async function upload(file?: File): Promise<void> {
     await restoreBackup(JSON.parse(await file.text()) as unknown)
     location.reload()
   } catch {
-    error.value = 'バックアップ形式が正しくないため復元できませんでした。'
+    error.value = $locale.value.sfc.invalidBackup
   }
 }
 async function removeAll(): Promise<void> {
-  if (!confirm('すべての問題集・学習履歴・設定を削除しますか？この操作は元に戻せません。')) return
+  if (!confirm($locale.value.sfc.deleteConfirm)) return
   await clearDatabase()
   location.href = '/'
 }
@@ -174,6 +174,9 @@ restoreJson: JSONから復元
 deleteAll: 全データ削除
 deleteAllIntro: ブラウザ内の問題集、学習履歴、設定をすべて削除します。
 deleteAllButton: すべて削除
+saved: 保存しました
+invalidBackup: バックアップ形式が正しくないため復元できませんでした。
+deleteConfirm: すべての問題集・学習履歴・設定を削除しますか？この操作は元に戻せません。
 </locale>
 <locale locale="en-US" lang="yaml">
 settings: Settings
@@ -200,4 +203,7 @@ restoreJson: Restore JSON
 deleteAll: Delete all data
 deleteAllIntro: Delete every deck, study record, and setting in this browser.
 deleteAllButton: Delete everything
+saved: Saved
+invalidBackup: The backup format is invalid and could not be restored.
+deleteConfirm: Delete all decks, study history, and settings? This action cannot be undone.
 </locale>

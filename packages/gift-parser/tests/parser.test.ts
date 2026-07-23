@@ -156,6 +156,30 @@ describe('parseGift', () => {
     )
   })
 
+  it('emits diagnostic messages in English', () => {
+    const parserDiagnostics = [
+      ...parseGift('::unterminated').diagnostics,
+      ...parseGift('Q {').diagnostics,
+      ...parseGift('Q {#=5..1}').diagnostics,
+      ...parseGift('Q {#=invalid}').diagnostics,
+      ...parseGift('Q {~%invalid%A =B}').diagnostics,
+      ...parseGift('Q {~A ~B}').diagnostics,
+      ...parseGift('Q {=A =B ~C}').diagnostics,
+    ]
+    const document = parseGift('Q {=a -> A =b -> B}').document
+    const validationDiagnostics = [
+      ...validateGift(document),
+      ...validateGift(document, { maxQuestions: 0, maxPromptLength: 0, maxAnswers: 0 }),
+    ]
+    const messages = [...parserDiagnostics, ...validationDiagnostics].map((item) => item.message)
+    expect(messages.length).toBeGreaterThan(0)
+    expect(
+      messages.every((message) =>
+        [...message].every((character) => character.charCodeAt(0) <= 127),
+      ),
+    ).toBe(true)
+  })
+
   it('parses the supported 20,000-question limit without quadratic range work', () => {
     const source = Array.from(
       { length: 20_000 },

@@ -23,6 +23,8 @@ export default tseslint.config(
         window: 'readonly',
         confirm: 'readonly',
         structuredClone: 'readonly',
+        $locale: 'readonly',
+        $l: 'readonly',
       },
     },
   },

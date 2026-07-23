@@ -199,22 +199,26 @@ onMounted(async () => {
     <div v-if="item && question">
       <header class="study-header">
         <div>
-          <span class="badge">{{ question.categoryPath.join(' / ') || 'カテゴリなし' }}</span
-          ><span v-if="route.query.cram === '1'" class="badge">詰め込み学習</span
-          ><span class="badge">{{ isFlashcard ? '単語帳' : 'クイズ' }}</span
-          ><span>{{ progress }}・残り {{ queue.length - index - 1 }}問</span>
+          <span class="badge">{{
+            question.categoryPath.join(' / ') || $locale.sfc.uncategorized
+          }}</span
+          ><span v-if="route.query.cram === '1'" class="badge">{{ $locale.sfc.cram }}</span
+          ><span class="badge">{{ isFlashcard ? $locale.sfc.flashcard : $locale.sfc.quiz }}</span
+          ><span>{{ progress }} · {{ $l.sfc.remaining({ count: queue.length - index - 1 }) }}</span>
         </div>
-        <button class="text-button" @click="router.push(backTarget)">中断する</button>
+        <button class="text-button" @click="router.push(backTarget)">
+          {{ $locale.sfc.stop }}
+        </button>
       </header>
       <article class="question-card">
-        <h1 class="visually-hidden">問題</h1>
+        <h1 class="visually-hidden">{{ $locale.sfc.question }}</h1>
         <ContentRenderer :content="question.prompt" />
         <template v-if="!isFlashcard">
           <fieldset
             v-if="question.kind === 'single-choice' || question.kind === 'multiple-choice'"
             class="choices"
           >
-            <legend class="visually-hidden">選択肢</legend>
+            <legend class="visually-hidden">{{ $locale.sfc.choices }}</legend>
             <label
               v-for="choice in question.choices"
               :key="choice.id"
@@ -238,21 +242,21 @@ onMounted(async () => {
                 ><span
                   v-if="graded && feedbackVisible && choiceCorrect(choice)"
                   class="answer-label"
-                  ><Check aria-hidden="true" />正答</span
+                  ><Check aria-hidden="true" />{{ $locale.sfc.correctAnswer }}</span
                 ><span
                   v-if="graded && feedbackVisible && selected.includes(choice.id)"
                   class="answer-label"
-                  >選択済み</span
+                  >{{ $locale.sfc.selected }}</span
                 ></span
               ></label
             >
           </fieldset>
           <fieldset v-else-if="question.kind === 'true-false'" class="choices">
-            <legend class="visually-hidden">正しいか誤りか</legend>
+            <legend class="visually-hidden">{{ $locale.sfc.trueOrFalse }}</legend>
             <label
               v-for="option in [
-                { id: 'true', label: '正しい' },
-                { id: 'false', label: '誤り' },
+                { id: 'true', label: $locale.sfc.trueLabel },
+                { id: 'false', label: $locale.sfc.falseLabel },
               ]"
               :key="option.id"
               class="choice-card"
@@ -276,18 +280,20 @@ onMounted(async () => {
               }}<span
                 v-if="graded && feedbackVisible && trueFalseCorrect(option.id)"
                 class="answer-label"
-                ><Check aria-hidden="true" />正答</span
+                ><Check aria-hidden="true" />{{ $locale.sfc.correctAnswer }}</span
               ></label
             >
           </fieldset>
           <label v-else-if="question.kind === 'short-answer'"
-            >解答<input
+            >{{ $locale.sfc.answer
+            }}<input
               v-model="text"
               :disabled="!!graded"
               autocomplete="off"
               @keydown.enter="gradeOnEnter" /></label
           ><label v-else-if="question.kind === 'numerical'"
-            >数値で解答<input
+            >{{ $locale.sfc.numericalAnswer
+            }}<input
               v-model="text"
               :disabled="!!graded"
               type="text"
@@ -295,60 +301,66 @@ onMounted(async () => {
               @keydown.enter="gradeOnEnter"
           /></label>
           <div v-else class="message warning">
-            この問題形式（{{ question.sourceKind }}）は、このバージョンでは出題できません。
+            {{ $l.sfc.unsupported({ kind: question.sourceKind }) }}
           </div>
           <div v-if="!graded" class="actions">
-            <button :disabled="!canAnswer" @click="grade">回答する</button>
+            <button :disabled="!canAnswer" @click="grade">{{ $locale.sfc.submitAnswer }}</button>
           </div>
           <div v-else-if="!feedbackVisible" class="actions">
-            <button @click="feedbackVisible = true">結果と解説を表示</button>
+            <button @click="feedbackVisible = true">{{ $locale.sfc.showFeedback }}</button>
           </div>
         </template>
         <div v-else-if="!answerVisible" class="actions">
-          <button @click="answerVisible = true">答えを見る</button>
+          <button @click="answerVisible = true">{{ $locale.sfc.revealAnswer }}</button>
         </div>
         <section
           v-if="isFlashcard && answerVisible"
           class="feedback flashcard-answer"
           aria-live="polite"
         >
-          <h2>正答</h2>
+          <h2>{{ $locale.sfc.correctAnswer }}</h2>
           <div v-if="correctChoices.length" class="correct-answer-list">
             <div v-for="choice in correctChoices" :key="choice.id" class="message">
               <ContentRenderer :content="choice.content" />
             </div>
           </div>
           <p v-else-if="question.kind === 'true-false'">
-            {{ question.correctAnswer ? '正しい' : '誤り' }}
+            {{ question.correctAnswer ? $locale.sfc.trueLabel : $locale.sfc.falseLabel }}
           </p>
           <p v-else-if="question.kind === 'short-answer'">
-            {{ correctShortAnswers.join(' / ') || '正答が登録されていません。' }}
+            {{ correctShortAnswers.join(' / ') || $locale.sfc.noCorrectAnswer }}
           </p>
           <p v-else-if="question.kind === 'numerical'">
-            {{ numericalAnswers.join(' / ') || '正答が登録されていません。' }}
+            {{ numericalAnswers.join(' / ') || $locale.sfc.noCorrectAnswer }}
           </p>
           <div v-if="question.explanation" class="message">
             <ContentRenderer :content="question.explanation" />
           </div>
           <div class="rating">
-            <p>この問題はどのくらい難しかったですか？</p>
-            <button :disabled="busy" class="secondary" @click="rate('again')">もう一度</button
-            ><button :disabled="busy" class="secondary" @click="rate('hard')">難しかった</button
-            ><button :disabled="busy" @click="rate('good')">わかった</button
-            ><button :disabled="busy" class="secondary" @click="rate('easy')">簡単</button>
+            <p>{{ $locale.sfc.flashcardRatingPrompt }}</p>
+            <button :disabled="busy" class="secondary" @click="rate('again')">
+              {{ $locale.sfc.again }}</button
+            ><button :disabled="busy" class="secondary" @click="rate('hard')">
+              {{ $locale.sfc.hard }}</button
+            ><button :disabled="busy" @click="rate('good')">{{ $locale.sfc.understood }}</button
+            ><button :disabled="busy" class="secondary" @click="rate('easy')">
+              {{ $locale.sfc.easy }}
+            </button>
           </div>
         </section>
         <section v-else-if="graded && feedbackVisible" class="feedback" aria-live="polite">
           <h2 :class="graded.correct ? 'success-text' : 'danger-text'">
             <Check v-if="graded.correct" aria-hidden="true" /><X v-else aria-hidden="true" />{{
-              graded.correct ? '正解' : '不正解'
-            }}（{{ Math.round(graded.score) }}点）
+              graded.correct
+                ? $l.sfc.correctResult({ score: Math.round(graded.score) })
+                : $l.sfc.incorrectResult({ score: Math.round(graded.score) })
+            }}
           </h2>
           <div
             v-if="!graded.correct && question.kind === 'short-answer' && correctShortAnswers.length"
             class="message"
           >
-            正しい答え:
+            {{ $locale.sfc.correctAnswers }}:
             <span v-for="(answer, i) in correctShortAnswers" :key="answer">
               {{ i ? ' / ' : '' }}{{ answer }}
             </span>
@@ -357,34 +369,115 @@ onMounted(async () => {
             <ContentRenderer :content="feedback" />
           </div>
           <div class="rating">
-            <p>この問題をどう感じましたか？</p>
-            <button :disabled="busy" class="secondary" @click="rate('again')">もう一度</button
-            ><button :disabled="busy" class="secondary" @click="rate('hard')">難しかった</button
-            ><button :disabled="busy || !graded.correct" @click="rate('good')">正解</button
+            <p>{{ $locale.sfc.quizRatingPrompt }}</p>
+            <button :disabled="busy" class="secondary" @click="rate('again')">
+              {{ $locale.sfc.again }}</button
+            ><button :disabled="busy" class="secondary" @click="rate('hard')">
+              {{ $locale.sfc.hard }}</button
+            ><button :disabled="busy || !graded.correct" @click="rate('good')">
+              {{ $locale.sfc.correct }}</button
             ><button :disabled="busy || !graded.correct" class="secondary" @click="rate('easy')">
-              簡単
+              {{ $locale.sfc.easy }}
             </button>
           </div>
           <p class="next-due">
-            次回予定（「正解」の場合）:
+            {{ $locale.sfc.nextDue }}:
             <time :datetime="nextDue">{{ new Date(nextDue).toLocaleString() }}</time>
           </p>
         </section>
       </article>
     </div>
     <div v-else class="empty-state">
-      <h1>{{ queue.length ? '今日の学習は完了です' : '出題できる問題はありません' }}</h1>
+      <h1>
+        {{ queue.length ? $locale.sfc.completedTitle : $locale.sfc.noQuestionsTitle }}
+      </h1>
       <p>
         {{
-          queue.length
-            ? `${queue.length}問を学習しました。`
-            : '期限になった復習問題、または新規問題がありません。'
+          queue.length ? $l.sfc.completedBody({ count: queue.length }) : $locale.sfc.noQuestionsBody
         }}
       </p>
-      <RouterLink v-if="typeof route.query.deck === 'string'" class="button" :to="backTarget"
-        >問題集へ戻る</RouterLink
-      >
-      <RouterLink v-else class="button" to="/">ホームへ戻る</RouterLink>
+      <RouterLink v-if="typeof route.query.deck === 'string'" class="button" :to="backTarget">{{
+        $locale.sfc.backToDeck
+      }}</RouterLink>
+      <RouterLink v-else class="button" to="/">{{ $locale.sfc.backHome }}</RouterLink>
     </div>
   </div>
 </template>
+<locale locale="ja-JP" lang="yaml">
+uncategorized: カテゴリなし
+cram: 詰め込み学習
+flashcard: 単語帳
+quiz: クイズ
+remaining: '残り {count}問'
+stop: 中断する
+question: 問題
+choices: 選択肢
+correctAnswer: 正答
+selected: 選択済み
+trueOrFalse: 正しいか誤りか
+trueLabel: 正しい
+falseLabel: 誤り
+answer: 解答
+numericalAnswer: 数値で解答
+unsupported: 'この問題形式（{kind}）は、このバージョンでは出題できません。'
+submitAnswer: 回答する
+showFeedback: 結果と解説を表示
+revealAnswer: 答えを見る
+noCorrectAnswer: 正答が登録されていません。
+flashcardRatingPrompt: この問題はどのくらい難しかったですか？
+again: もう一度
+hard: 難しかった
+understood: わかった
+easy: 簡単
+correctResult: '正解（{score}点）'
+incorrectResult: '不正解（{score}点）'
+correctAnswers: 正しい答え
+quizRatingPrompt: この問題をどう感じましたか？
+correct: 正解
+nextDue: 次回予定（「正解」の場合）
+completedTitle: 今日の学習は完了です
+noQuestionsTitle: 出題できる問題はありません
+completedBody: '{count}問を学習しました。'
+noQuestionsBody: 期限になった復習問題、または新規問題がありません。
+backToDeck: 問題集へ戻る
+backHome: ホームへ戻る
+</locale>
+<locale locale="en-US" lang="yaml">
+uncategorized: Uncategorized
+cram: Cramming
+flashcard: Flashcards
+quiz: Quiz
+remaining: '{count, plural, one {# remaining} other {# remaining}}'
+stop: Stop
+question: Question
+choices: Choices
+correctAnswer: Correct answer
+selected: Selected
+trueOrFalse: True or false
+trueLabel: 'True'
+falseLabel: 'False'
+answer: Answer
+numericalAnswer: Numerical answer
+unsupported: 'This question type ({kind}) cannot be studied in this version.'
+submitAnswer: Submit answer
+showFeedback: Show result and explanation
+revealAnswer: Reveal answer
+noCorrectAnswer: No correct answer is registered.
+flashcardRatingPrompt: How difficult was this question?
+again: Again
+hard: Hard
+understood: Understood
+easy: Easy
+correctResult: 'Correct ({score} points)'
+incorrectResult: 'Incorrect ({score} points)'
+correctAnswers: Correct answers
+quizRatingPrompt: How did this question feel?
+correct: Correct
+nextDue: Next due if rated Correct
+completedTitle: Today's study is complete
+noQuestionsTitle: No questions available
+completedBody: '{count, plural, one {You studied # question.} other {You studied # questions.}}'
+noQuestionsBody: No reviews are due and no new questions are available.
+backToDeck: Back to deck
+backHome: Back home
+</locale>

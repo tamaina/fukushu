@@ -11,7 +11,7 @@ export function validateGift(
     diagnostics.push({
       severity: 'error',
       code: 'GIFT_TOO_MANY_QUESTIONS',
-      message: `問題数が上限の${maxQuestions}問を超えています。`,
+      message: `The question count exceeds the limit of ${maxQuestions}.`,
       range: document.range,
     })
   for (const question of questions) {
@@ -19,14 +19,14 @@ export function validateGift(
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_MATCHING_TOO_FEW_PAIRS',
-        message: '組み合わせ問題には3組以上の対応が必要です。',
+        message: 'Matching questions require at least three pairs.',
         range: question.range,
       })
     if (question.prompt.value.length > (options.maxPromptLength ?? 100_000))
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_PROMPT_TOO_LONG',
-        message: '問題文が長すぎます。',
+        message: 'The question prompt is too long.',
         range: question.prompt.range,
       })
     const answerCount =
@@ -41,7 +41,7 @@ export function validateGift(
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_TOO_MANY_ANSWERS',
-        message: '選択肢または解答候補が多すぎます。',
+        message: 'The question has too many choices or answer candidates.',
         range: question.range,
       })
   }

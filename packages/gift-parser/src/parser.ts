@@ -82,7 +82,7 @@ function parseQuestion(
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_UNTERMINATED_NAME',
-        message: '問題名の終端 :: がありません。',
+        message: 'The question name is missing its closing :: delimiter.',
         range: rangeAt(source, start, start + raw.length),
       })
       return undefined
@@ -114,7 +114,7 @@ function parseQuestion(
     diagnostics.push({
       severity: 'error',
       code: 'GIFT_UNTERMINATED_ANSWER_BLOCK',
-      message: '解答ブロックを閉じる } がありません。',
+      message: 'The answer block is missing its closing } delimiter.',
       range: rangeAt(source, start + open, start + raw.length),
     })
     return undefined
@@ -201,7 +201,7 @@ function parseQuestion(
           diagnostics.push({
             severity: 'error',
             code: 'GIFT_NUMERICAL_INVALID_RANGE',
-            message: '数値範囲の最小値が最大値を超えています。',
+            message: 'The minimum of a numerical range cannot exceed its maximum.',
             range: nodeRange,
           })
         return [
@@ -235,7 +235,7 @@ function parseQuestion(
         diagnostics.push({
           severity: 'error',
           code: 'GIFT_NUMERICAL_INVALID_NUMBER',
-          message: '数値解答が不正です。',
+          message: 'The numerical answer is invalid.',
           range: nodeRange,
         })
         return []
@@ -287,7 +287,7 @@ function parseQuestion(
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_INVALID_WEIGHT',
-        message: '配点は-100から100の数値で指定してください。',
+        message: 'The answer weight must be a number from -100 to 100.',
         range: rangeAt(
           source,
           start + open + 1 + entry.offset,
@@ -329,14 +329,14 @@ function parseQuestion(
     diagnostics.push({
       severity: 'warning',
       code: 'GIFT_MULTIPLE_CHOICE_NO_POSITIVE_ANSWER',
-      message: '正の配点を持つ選択肢がありません。',
+      message: 'No choice has a positive weight.',
       range: base.range,
     })
   if (answers.filter((item) => item.weight === 100).length > 1)
     diagnostics.push({
       severity: 'warning',
       code: 'GIFT_MULTIPLE_CHOICE_MULTIPLE_FULL_SCORES',
-      message: '満点の選択肢が複数あります。',
+      message: 'Multiple choices receive full credit.',
       range: base.range,
     })
   return {

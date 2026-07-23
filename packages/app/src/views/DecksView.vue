@@ -59,7 +59,8 @@ onMounted(load)
             ><span
               >{{ deck.enabledQuestionCount }} / {{ deck.questionCount }}
               {{ $locale.sfc.enabled }} ·
-              {{ deck.studyMode === 'flashcard' ? '単語帳' : 'クイズ' }} ·
+              {{ deck.studyMode === 'flashcard' ? $locale.sfc.flashcard : $locale.sfc.quiz }}
+              ·
               {{ $locale.sfc.studied }}
               {{ stats[deck.id]?.studied ?? 0 }} · {{ $locale.sfc.due }}
               {{ stats[deck.id]?.due ?? 0 }}</span
@@ -94,6 +95,8 @@ due: 期限
 next: 次回
 lastStudy: 最終学習
 none: なし
+flashcard: 単語帳
+quiz: クイズ
 </locale>
 <locale locale="en-US" lang="yaml">
 decks: Decks
@@ -108,4 +111,6 @@ due: due
 next: Next
 lastStudy: last studied
 none: none
+flashcard: Flashcards
+quiz: Quiz
 </locale>

@@ -10,7 +10,11 @@ import { ExternalLink } from '@lucide/vue'
     <h2>{{ $locale.sfc.giftFsrs }}</h2>
     <p>{{ $locale.sfc.giftFsrsBody }}</p>
     <p>
-      <a href="https://github.com/tamaina/fukushu/blob/main/docs/gift-support.md" target="_blank" rel="noopener noreferrer">
+      <a
+        href="https://github.com/tamaina/fukushu/blob/main/docs/gift-support.md"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {{ $locale.sfc.aboutGiftSupport }}
         <ExternalLink :size="15" aria-hidden="true" />
       </a>
@@ -59,7 +63,7 @@ openSourceBody: Vue、Vue Router、ts-fsrs、idb、DOMPurify、Marked、Lucide�
 production: 制作
 author: 作者
 sourceCode: ソースコード
-supportMe: Support me
+supportMe: 支援する
 </locale>
 <locale locale="en-US" lang="yaml">
 aboutTitle: About Fukushu

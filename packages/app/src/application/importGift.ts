@@ -144,7 +144,7 @@ export async function previewGift(source: string, deckId: string): Promise<Impor
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_SOURCE_KEY_COLLISION',
-        message: '同じ問題IDになる問題が複数あります。',
+        message: 'Multiple questions resolve to the same question ID.',
         range: block.range,
       })
     keys.add(key)
