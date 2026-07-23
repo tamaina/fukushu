@@ -171,6 +171,7 @@ onMounted(async () => {
           question,
           state,
           isNew: state.card.reps === 0,
+          deckName: deck?.name ?? '',
           studyMode: deck?.studyMode ?? 'quiz',
         })
       }
@@ -202,19 +203,20 @@ onMounted(async () => {
   <div class="page study-page">
     <div v-if="item && question">
       <header class="study-header">
-        <div>
-          <span class="badge">{{
-            question.categoryPath.join(' / ') || $locale.sfc.uncategorized
-          }}</span
-          ><span v-if="route.query.cram === '1'" class="badge">{{ $locale.sfc.cram }}</span
-          ><span class="badge">{{ isFlashcard ? $locale.sfc.flashcard : $locale.sfc.quiz }}</span
-          ><span>{{ progress }} · {{ $l.sfc.remaining({ count: queue.length - index - 1 }) }}</span>
-        </div>
+        <span>{{ progress }} · {{ $l.sfc.remaining({ count: queue.length - index - 1 }) }}</span>
         <button class="text-button" @click="router.push(backTarget)">
           {{ $locale.sfc.stop }}
         </button>
       </header>
       <article class="question-card">
+        <div class="question-card-meta">
+          <span v-if="item.deckName" class="badge">{{ item.deckName }}</span>
+          <span class="badge">{{
+            question.categoryPath.join(' / ') || $locale.sfc.uncategorized
+          }}</span>
+          <span class="badge">{{ isFlashcard ? $locale.sfc.flashcard : $locale.sfc.quiz }}</span>
+          <span v-if="route.query.cram === '1'" class="badge">{{ $locale.sfc.cram }}</span>
+        </div>
         <h1 class="visually-hidden">{{ $locale.sfc.question }}</h1>
         <ContentRenderer :content="question.prompt" />
         <template v-if="!isFlashcard">

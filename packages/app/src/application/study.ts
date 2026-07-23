@@ -19,6 +19,7 @@ export interface StudyItem {
   question: QuestionRecord
   state: StudyStateRecord
   isNew: boolean
+  deckName: DeckRecord['name']
   studyMode: DeckRecord['studyMode']
 }
 export function prepareQuestion(question: QuestionRecord, shuffle: boolean): QuestionRecord {
@@ -62,6 +63,7 @@ export async function buildStudyQueue(
         question: prepareQuestion(question, settings.shuffleChoices),
         state,
         isNew: false,
+        deckName: decks.get(state.deckId)?.name ?? '',
         studyMode: decks.get(state.deckId)?.studyMode ?? 'quiz',
       })
     }
@@ -80,6 +82,7 @@ export async function buildStudyQueue(
         question: prepareQuestion(question, settings.shuffleChoices),
         state,
         isNew: true,
+        deckName: decks.get(state.deckId)?.name ?? '',
         studyMode: decks.get(state.deckId)?.studyMode ?? 'quiz',
       })
     }
