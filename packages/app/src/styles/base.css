@@ -658,7 +658,7 @@ td {
     gap: 1px;
   }
   .page-heading {
-    display: grid;
+    display: block;
   }
   .page-heading > .button {
     width: 100%;
