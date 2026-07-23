@@ -646,11 +646,11 @@ td {
     width: min(100% - 24px, var(--content-width));
   }
   .site-header {
-    align-items: flex-start;
+    align-items: center;
     padding: 12px 0;
   }
   .site-title {
-    padding-top: 8px;
+    padding-top: 0;
   }
   nav a {
     font-size: 0.8rem;
