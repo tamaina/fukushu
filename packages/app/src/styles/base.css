@@ -824,11 +824,18 @@ td {
     width: 100%;
   }
   .deck-detail-actions {
-    justify-items: stretch;
+    justify-items: start;
+  }
+  .deck-study-actions {
+    width: 100%;
   }
   .deck-study-actions > .button,
   .deck-detail-actions > .button {
     width: 100%;
+  }
+  .deck-file-actions > * {
+    flex: none;
+    width: auto;
   }
   .rating-summary {
     grid-template-columns: repeat(2, 1fr);

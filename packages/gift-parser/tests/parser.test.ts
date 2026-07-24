@@ -83,6 +83,22 @@ describe('parseGift', () => {
     ).toEqual(['a~b', 'c#d'])
   })
 
+  it('keeps escaped feedback markers and multiline delimiters in the current node', () => {
+    const parsed = parseGift(
+      '::escaped::Line one\nline two {=answer\\#part#feedback\\#part ~other}\n\nNext {FALSE}',
+    )
+    const first = parsed.document.children[0]
+    expect(parsed.document.children).toHaveLength(2)
+    expect(first?.type === 'question' && first.prompt.value).toBe('Line one\nline two')
+    expect(
+      first?.type === 'question' &&
+        first.kind === 'multiple-choice' && [
+          first.answers[0]?.content.value,
+          first.answers[0]?.feedback?.value,
+        ],
+    ).toEqual(['answer#part', 'feedback#part'])
+  })
+
   it('unescapes comparison operators in choices', () => {
     const question = parseGift(
       '::Q11_特殊文字::次のうち、比較演算子「小なり」はどれですか？ {=\\< ~\\> ~\\= ~\\~}',

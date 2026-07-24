@@ -13,332 +13,439 @@ import type {
 
 const unescapeGift = (value: string): string =>
   value.replace(/\\n/g, '\n').replace(/\\([~=#{}:\\<>])/g, '$1')
-const escapeAwareIndex = (text: string, needle: string, from = 0): number => {
-  for (let i = from; i <= text.length - needle.length; i += 1) {
-    if (text.startsWith(needle, i)) {
-      let slashes = 0
-      for (let j = i - 1; j >= 0 && text[j] === '\\'; j -= 1) slashes += 1
-      if (slashes % 2 === 0) return i
-    }
+
+class GiftCursor {
+  constructor(
+    readonly source: string,
+    public position = 0,
+    readonly end = source.length,
+  ) {}
+
+  get eof(): boolean {
+    return this.position >= this.end
   }
-  return -1
-}
-const splitUnescaped = (
-  text: string,
-  delimiter: string,
-): Array<{ value: string; offset: number }> => {
-  const result: Array<{ value: string; offset: number }> = []
-  let start = 0
-  while (start <= text.length) {
-    const found = escapeAwareIndex(text, delimiter, start)
-    if (found < 0) {
-      result.push({ value: text.slice(start), offset: start })
-      break
-    }
-    result.push({ value: text.slice(start, found), offset: start })
-    start = found + delimiter.length
+
+  peek(offset = 0): string | undefined {
+    const at = this.position + offset
+    return at < this.end ? this.source[at] : undefined
   }
-  return result
+
+  startsWith(value: string): boolean {
+    return this.position + value.length <= this.end && this.source.startsWith(value, this.position)
+  }
+
+  startsWithIgnoringCase(value: string): boolean {
+    return (
+      this.position + value.length <= this.end &&
+      this.source.slice(this.position, this.position + value.length).toLowerCase() ===
+        value.toLowerCase()
+    )
+  }
+
+  advance(count = 1): void {
+    this.position = Math.min(this.position + count, this.end)
+  }
+
+  consumeIf(value: string): boolean {
+    if (!this.startsWith(value)) return false
+    this.advance(value.length)
+    return true
+  }
+
+  readLine(): { start: number; end: number } {
+    const start = this.position
+    while (!this.eof) {
+      const character = this.peek()
+      this.advance()
+      if (character === '\n') break
+    }
+    return { start, end: this.position }
+  }
+
+  findUnescaped(delimiters: readonly string[]): string | undefined {
+    while (!this.eof) {
+      if (this.peek() === '\\') {
+        this.advance(Math.min(2, this.end - this.position))
+        continue
+      }
+      const delimiter = delimiters.find((candidate) => this.startsWith(candidate))
+      if (delimiter) return delimiter
+      this.advance()
+    }
+    return undefined
+  }
 }
+
+const isWhitespace = (character: string | undefined): boolean =>
+  character !== undefined && character.trim() === ''
+
+const trimSpan = (source: string, start: number, end: number): { start: number; end: number } => {
+  while (start < end && isWhitespace(source[start])) start += 1
+  while (end > start && isWhitespace(source[end - 1])) end -= 1
+  return { start, end }
+}
+
 const content = (
   source: string,
-  value: string,
   start: number,
+  end: number,
   format: GiftTextFormat,
 ): GiftContent => ({
   type: 'content',
   format,
-  value: unescapeGift(value.trim()),
-  range: rangeAt(source, start, start + value.length),
+  value: unescapeGift(source.slice(start, end).trim()),
+  range: rangeAt(source, start, end),
 })
-const parseWeight = (raw: string): { weight: number; rest: string; invalid: boolean } => {
-  const marker = raw[0]
-  const body = raw.slice(1)
-  const match = body.match(/^%([^%]+)%/)
-  if (!match) return { weight: marker === '=' ? 100 : 0, rest: body, invalid: false }
-  const weight = Number(match[1])
+
+interface AnswerEntry {
+  marker: '=' | '~'
+  start: number
+  valueStart: number
+  valueEnd: number
+  end: number
+}
+
+const readAnswerEntries = (
+  source: string,
+  start: number,
+  end: number,
+  implicitMarker: '=' | '~' = '~',
+): AnswerEntry[] => {
+  const cursor = new GiftCursor(source, start, end)
+  const entries: AnswerEntry[] = []
+  while (!cursor.eof) {
+    const explicitMarker = cursor.peek() === '=' || cursor.peek() === '~'
+    const entryStart = cursor.position
+    const marker = explicitMarker ? (cursor.peek() as '=' | '~') : implicitMarker
+    if (explicitMarker) cursor.advance()
+    const valueStart = cursor.position
+    cursor.findUnescaped(['=', '~'])
+    const valueEnd = cursor.position
+    if (source.slice(valueStart, valueEnd).trim()) {
+      entries.push({ marker, start: entryStart, valueStart, valueEnd, end: valueEnd })
+    }
+  }
+  return entries
+}
+
+const parseWeight = (
+  source: string,
+  entry: AnswerEntry,
+): { weight: number; contentStart: number; invalid: boolean } => {
+  const fallback = entry.marker === '=' ? 100 : 0
+  const cursor = new GiftCursor(source, entry.valueStart, entry.valueEnd)
+  if (!cursor.consumeIf('%')) {
+    return { weight: fallback, contentStart: entry.valueStart, invalid: false }
+  }
+  const weightStart = cursor.position
+  const delimiter = cursor.findUnescaped(['%'])
+  if (!delimiter) {
+    return { weight: fallback, contentStart: entry.valueStart, invalid: false }
+  }
+  const weight = Number(source.slice(weightStart, cursor.position))
+  cursor.advance()
   return {
     weight,
-    rest: body.slice(match[0].length),
+    contentStart: cursor.position,
     invalid: !Number.isFinite(weight) || weight < -100 || weight > 100,
   }
 }
-const feedbackParts = (raw: string): [string, string | undefined] => {
-  const at = escapeAwareIndex(raw, '#')
-  return at < 0 ? [raw, undefined] : [raw.slice(0, at), raw.slice(at + 1)]
+
+const splitFeedback = (
+  source: string,
+  start: number,
+  end: number,
+): { valueEnd: number; feedbackStart?: number } => {
+  const cursor = new GiftCursor(source, start, end)
+  if (!cursor.findUnescaped(['#'])) return { valueEnd: end }
+  const valueEnd = cursor.position
+  cursor.advance()
+  return { valueEnd, feedbackStart: cursor.position }
+}
+
+const findUnescaped = (
+  source: string,
+  start: number,
+  end: number,
+  delimiter: string,
+): number | undefined => {
+  const cursor = new GiftCursor(source, start, end)
+  return cursor.findUnescaped([delimiter]) ? cursor.position : undefined
+}
+
+function parseNumericalAnswers(
+  source: string,
+  start: number,
+  end: number,
+  format: GiftTextFormat,
+  diagnostics: GiftDiagnostic[],
+): GiftNumericalAnswer[] {
+  return readAnswerEntries(source, start, end, '=').flatMap<GiftNumericalAnswer>((entry) => {
+    // Numerical separators do not change the default score in GIFT.
+    const weightedEntry = { ...entry, marker: '=' as const }
+    const parsed = parseWeight(source, weightedEntry)
+    const parts = splitFeedback(source, parsed.contentStart, entry.valueEnd)
+    const numberSpan = trimSpan(source, parsed.contentStart, parts.valueEnd)
+    const text = source.slice(numberSpan.start, numberSpan.end)
+    const tolerance = text.match(/^(-?\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$/)
+    const numericalRange = text.match(/^(-?\d+(?:\.\d+)?)\s*\.\.\s*(-?\d+(?:\.\d+)?)$/)
+    const nodeRange = rangeAt(source, entry.start, entry.end)
+    const feedback =
+      parts.feedbackStart === undefined
+        ? {}
+        : { feedback: content(source, parts.feedbackStart, entry.valueEnd, format) }
+    if (numericalRange) {
+      const min = Number(numericalRange[1])
+      const max = Number(numericalRange[2])
+      if (min > max) {
+        diagnostics.push({
+          severity: 'error',
+          code: 'GIFT_NUMERICAL_INVALID_RANGE',
+          message: 'The minimum of a numerical range cannot exceed its maximum.',
+          range: nodeRange,
+        })
+      }
+      return [
+        { type: 'numerical-range', min, max, weight: parsed.weight, range: nodeRange, ...feedback },
+      ]
+    }
+    if (tolerance) {
+      return [
+        {
+          type: 'numerical-tolerance',
+          value: Number(tolerance[1]),
+          tolerance: Number(tolerance[2]),
+          weight: parsed.weight,
+          range: nodeRange,
+          ...feedback,
+        },
+      ]
+    }
+    const value = Number(text)
+    if (!Number.isFinite(value)) {
+      diagnostics.push({
+        severity: 'error',
+        code: 'GIFT_NUMERICAL_INVALID_NUMBER',
+        message: 'The numerical answer is invalid.',
+        range: nodeRange,
+      })
+      return []
+    }
+    return [
+      { type: 'numerical-exact', value, weight: parsed.weight, range: nodeRange, ...feedback },
+    ]
+  })
 }
 
 function parseQuestion(
   source: string,
-  raw: string,
   start: number,
+  end: number,
   diagnostics: GiftDiagnostic[],
 ): GiftQuestion | undefined {
-  let cursor = 0
+  const cursor = new GiftCursor(source, start, end)
   let name: string | undefined
-  if (raw.startsWith('::')) {
-    const end = escapeAwareIndex(raw, '::', 2)
-    if (end < 0) {
+  if (cursor.consumeIf('::')) {
+    const nameStart = cursor.position
+    if (!cursor.findUnescaped(['::'])) {
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_UNTERMINATED_NAME',
         message: 'The question name is missing its closing :: delimiter.',
-        range: rangeAt(source, start, start + raw.length),
+        range: rangeAt(source, start, end),
       })
       return undefined
     }
-    name = unescapeGift(raw.slice(2, end))
-    cursor = end + 2
+    name = unescapeGift(source.slice(nameStart, cursor.position))
+    cursor.advance(2)
   }
+
   let format: GiftTextFormat = 'plain'
-  const formatMatch = raw.slice(cursor).match(/^\[(html|markdown|moodle|plain|auto)\]/i)
-  if (formatMatch?.[1]) {
-    format = formatMatch[1].toLowerCase() as GiftTextFormat
-    cursor += formatMatch[0].length
+  const formats: GiftTextFormat[] = ['html', 'markdown', 'moodle', 'plain', 'auto']
+  if (cursor.peek() === '[') {
+    const matched = formats.find((candidate) => {
+      const probe = new GiftCursor(source, cursor.position, end)
+      return probe.startsWithIgnoringCase(`[${candidate}]`)
+    })
+    if (matched) {
+      format = matched
+      cursor.advance(matched.length + 2)
+    }
   }
-  const open = escapeAwareIndex(raw, '{', cursor)
-  if (open < 0) {
-    const value = raw.slice(cursor).trim()
-    if (!value) return undefined
+
+  const promptStart = cursor.position
+  if (!cursor.findUnescaped(['{'])) {
+    const promptSpan = trimSpan(source, promptStart, end)
+    if (promptSpan.start === promptSpan.end) return undefined
     const base = {
       type: 'question' as const,
       kind: 'description' as const,
-      prompt: content(source, value, start + cursor, format),
+      prompt: content(source, promptSpan.start, promptSpan.end, format),
       format,
-      range: rangeAt(source, start, start + raw.length),
+      range: rangeAt(source, start, end),
     }
     return name === undefined ? base : { ...base, name }
   }
-  const close = escapeAwareIndex(raw, '}', open + 1)
-  if (close < 0) {
+
+  const open = cursor.position
+  cursor.advance()
+  const answerBlockStart = cursor.position
+  if (!cursor.findUnescaped(['}'])) {
     diagnostics.push({
       severity: 'error',
       code: 'GIFT_UNTERMINATED_ANSWER_BLOCK',
       message: 'The answer block is missing its closing } delimiter.',
-      range: rangeAt(source, start + open, start + raw.length),
+      range: rangeAt(source, open, end),
     })
     return undefined
   }
-  const prompt = content(source, raw.slice(cursor, open), start + cursor, format)
-  const answerWithFeedback = raw.slice(open + 1, close).trim()
-  const generalFeedbackAt = escapeAwareIndex(answerWithFeedback, '####')
-  const answer = (
-    generalFeedbackAt < 0 ? answerWithFeedback : answerWithFeedback.slice(0, generalFeedbackAt)
-  ).trim()
-  const generalFeedback =
-    generalFeedbackAt < 0
-      ? undefined
-      : content(
-          source,
-          answerWithFeedback.slice(generalFeedbackAt + 4),
-          start + open + 1 + generalFeedbackAt + 4,
-          format,
-        )
+  const close = cursor.position
+  const answerBlockSpan = trimSpan(source, answerBlockStart, close)
+  const generalFeedbackAt = findUnescaped(
+    source,
+    answerBlockSpan.start,
+    answerBlockSpan.end,
+    '####',
+  )
+  const answerSpan = trimSpan(
+    source,
+    answerBlockSpan.start,
+    generalFeedbackAt ?? answerBlockSpan.end,
+  )
   const base = {
     type: 'question' as const,
-    prompt,
+    prompt: content(source, promptStart, open, format),
     format,
-    range: rangeAt(source, start, start + close + 1),
+    range: rangeAt(source, start, close + 1),
     ...(name === undefined ? {} : { name }),
-    ...(generalFeedback === undefined ? {} : { generalFeedback }),
+    ...(generalFeedbackAt === undefined
+      ? {}
+      : { generalFeedback: content(source, generalFeedbackAt + 4, answerBlockSpan.end, format) }),
   }
-  if (!answer) return { ...base, kind: 'essay' }
-  const tf = answer.match(/^(T|TRUE|F|FALSE)(?:#([^#]*))?(?:#(.*))?$/i)
-  if (tf) {
-    const correctAnswer = tf[1]!.toUpperCase().startsWith('T')
-    const wrongFeedback = tf[2]
-    const correctFeedback = tf[3]
+
+  if (answerSpan.start === answerSpan.end) return { ...base, kind: 'essay' }
+
+  const trueFalseCursor = new GiftCursor(source, answerSpan.start, answerSpan.end)
+  trueFalseCursor.findUnescaped(['#'])
+  const trueFalseToken = source
+    .slice(answerSpan.start, trueFalseCursor.position)
+    .trim()
+    .toUpperCase()
+  if (['T', 'TRUE', 'F', 'FALSE'].includes(trueFalseToken)) {
+    const correctAnswer = trueFalseToken.startsWith('T')
+    const feedback: Array<{ start: number; end: number }> = []
+    while (!trueFalseCursor.eof) {
+      trueFalseCursor.advance()
+      const feedbackStart = trueFalseCursor.position
+      trueFalseCursor.findUnescaped(['#'])
+      feedback.push({ start: feedbackStart, end: trueFalseCursor.position })
+    }
+    const wrongFeedback = feedback[0]
+    const correctFeedback = feedback[1]
+    const trueFeedback = correctAnswer ? correctFeedback : wrongFeedback
+    const falseFeedback = correctAnswer ? wrongFeedback : correctFeedback
     return {
       ...base,
       kind: 'true-false',
       correctAnswer,
-      ...((correctAnswer ? correctFeedback : wrongFeedback) === undefined
+      ...(trueFeedback === undefined
         ? {}
-        : {
-            trueFeedback: content(
-              source,
-              (correctAnswer ? correctFeedback : wrongFeedback)!,
-              start + open + 1,
-              format,
-            ),
-          }),
-      ...((correctAnswer ? wrongFeedback : correctFeedback) === undefined
+        : { trueFeedback: content(source, trueFeedback.start, trueFeedback.end, format) }),
+      ...(falseFeedback === undefined
         ? {}
-        : {
-            falseFeedback: content(
-              source,
-              (correctAnswer ? wrongFeedback : correctFeedback)!,
-              start + open + 1,
-              format,
-            ),
-          }),
+        : { falseFeedback: content(source, falseFeedback.start, falseFeedback.end, format) }),
     }
   }
-  if (answer.startsWith('#')) {
-    const entries = splitUnescaped(answer.slice(1), '=')
-      .flatMap((part) =>
-        splitUnescaped(part.value, '~').map((nested) => ({
-          value: nested.value,
-          offset: part.offset + nested.offset + 1,
-        })),
-      )
-      .filter((item) => item.value.trim())
-    const answers = entries.flatMap<GiftNumericalAnswer>((entry) => {
-      const parsed = parseWeight(`=${entry.value}`)
-      const [numberPart, fb] = feedbackParts(parsed.rest)
-      const text = numberPart.trim()
-      const tolerance = text.match(/^(-?\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$/)
-      const range = text.match(/^(-?\d+(?:\.\d+)?)\s*\.\.\s*(-?\d+(?:\.\d+)?)$/)
-      const nodeRange = rangeAt(
+
+  if (source[answerSpan.start] === '#') {
+    return {
+      ...base,
+      kind: 'numerical',
+      answers: parseNumericalAnswers(
         source,
-        start + open + 1 + entry.offset,
-        start + open + 2 + entry.offset + entry.value.length,
-      )
-      if (range) {
-        const min = Number(range[1])
-        const max = Number(range[2])
-        if (min > max)
-          diagnostics.push({
-            severity: 'error',
-            code: 'GIFT_NUMERICAL_INVALID_RANGE',
-            message: 'The minimum of a numerical range cannot exceed its maximum.',
-            range: nodeRange,
-          })
-        return [
-          {
-            type: 'numerical-range' as const,
-            min,
-            max,
-            weight: parsed.weight,
-            range: nodeRange,
-            ...(fb === undefined
-              ? {}
-              : { feedback: content(source, fb, start + open + 1, format) }),
-          },
-        ]
-      }
-      if (tolerance)
-        return [
-          {
-            type: 'numerical-tolerance' as const,
-            value: Number(tolerance[1]),
-            tolerance: Number(tolerance[2]),
-            weight: parsed.weight,
-            range: nodeRange,
-            ...(fb === undefined
-              ? {}
-              : { feedback: content(source, fb, start + open + 1, format) }),
-          },
-        ]
-      const value = Number(text)
-      if (!Number.isFinite(value)) {
-        diagnostics.push({
-          severity: 'error',
-          code: 'GIFT_NUMERICAL_INVALID_NUMBER',
-          message: 'The numerical answer is invalid.',
-          range: nodeRange,
-        })
-        return []
-      }
-      return [
-        {
-          type: 'numerical-exact' as const,
-          value,
-          weight: parsed.weight,
-          range: nodeRange,
-          ...(fb === undefined ? {} : { feedback: content(source, fb, start + open + 1, format) }),
-        },
-      ]
-    })
-    return { ...base, kind: 'numerical', answers }
+        answerSpan.start + 1,
+        answerSpan.end,
+        format,
+        diagnostics,
+      ),
+    }
   }
-  const entries = splitUnescaped(answer, '~')
-    .flatMap((part) =>
-      splitUnescaped(part.value, '=').map((nested, i) => ({
-        raw: `${i === 0 && part.value.startsWith('=') ? '=' : nested.offset === 0 && part.offset === 0 && answer.startsWith('=') ? '=' : nested.offset > 0 || part.value.startsWith('=') ? '=' : '~'}${nested.value}`,
-        offset: part.offset + nested.offset,
-      })),
-    )
-    .filter((entry) => entry.raw.slice(1).trim())
+
+  const entries = readAnswerEntries(source, answerSpan.start, answerSpan.end)
   const matching =
-    entries.length > 0 && entries.every((entry) => escapeAwareIndex(entry.raw, '->') >= 0)
+    entries.length > 0 &&
+    entries.every(
+      (entry) => findUnescaped(source, entry.valueStart, entry.valueEnd, '->') !== undefined,
+    )
   if (matching) {
     const pairs = entries.map((entry) => {
-      const arrow = escapeAwareIndex(entry.raw, '->')
-      const left = entry.raw.slice(1, arrow)
-      const right = entry.raw.slice(arrow + 2)
+      const arrow = findUnescaped(source, entry.valueStart, entry.valueEnd, '->')!
       return {
         type: 'matching-pair' as const,
-        left: content(source, left, start + open + 2 + entry.offset, format),
-        right: content(source, right, start + open + 2 + entry.offset + arrow + 2, format),
-        range: rangeAt(
-          source,
-          start + open + 1 + entry.offset,
-          start + open + 2 + entry.offset + entry.raw.length,
-        ),
+        left: content(source, entry.valueStart, arrow, format),
+        right: content(source, arrow + 2, entry.valueEnd, format),
+        range: rangeAt(source, entry.start, entry.end),
       }
     })
     return { ...base, kind: 'matching', pairs }
   }
-  const hasTilde = entries.some((entry) => entry.raw.startsWith('~'))
+
   const parsed = entries.map((entry) => {
-    const weight = parseWeight(entry.raw)
-    if (weight.invalid)
+    const weight = parseWeight(source, entry)
+    if (weight.invalid) {
       diagnostics.push({
         severity: 'error',
         code: 'GIFT_INVALID_WEIGHT',
         message: 'The answer weight must be a number from -100 to 100.',
-        range: rangeAt(
-          source,
-          start + open + 1 + entry.offset,
-          start + open + 2 + entry.offset + entry.raw.length,
-        ),
+        range: rangeAt(source, entry.start, entry.end),
       })
-    const [answerText, fb] = feedbackParts(weight.rest)
-    return { entry, weight, answerText, fb }
+    }
+    const parts = splitFeedback(source, weight.contentStart, entry.valueEnd)
+    return { entry, weight, parts }
   })
-  if (!hasTilde)
+  const hasTilde = entries.some((entry) => entry.marker === '~')
+  if (!hasTilde) {
     return {
       ...base,
       kind: 'short-answer',
-      answers: parsed.map(({ entry, weight, answerText, fb }) => ({
+      answers: parsed.map(({ entry, weight, parts }) => ({
         type: 'short-answer-option',
-        value: unescapeGift(answerText.trim()),
+        value: unescapeGift(source.slice(weight.contentStart, parts.valueEnd).trim()),
         weight: weight.weight,
-        range: rangeAt(
-          source,
-          start + open + 1 + entry.offset,
-          start + open + 2 + entry.offset + entry.raw.length,
-        ),
-        ...(fb === undefined ? {} : { feedback: content(source, fb, start + open + 1, format) }),
+        range: rangeAt(source, entry.start, entry.end),
+        ...(parts.feedbackStart === undefined
+          ? {}
+          : { feedback: content(source, parts.feedbackStart, entry.valueEnd, format) }),
       })),
     }
-  const answers = parsed.map(({ entry, weight, answerText, fb }) => ({
+  }
+
+  const answers = parsed.map(({ entry, weight, parts }) => ({
     type: 'choice-answer' as const,
-    content: content(source, answerText, start + open + 2 + entry.offset, format),
+    content: content(source, weight.contentStart, parts.valueEnd, format),
     weight: weight.weight,
-    range: rangeAt(
-      source,
-      start + open + 1 + entry.offset,
-      start + open + 2 + entry.offset + entry.raw.length,
-    ),
-    ...(fb === undefined ? {} : { feedback: content(source, fb, start + open + 1, format) }),
+    range: rangeAt(source, entry.start, entry.end),
+    ...(parts.feedbackStart === undefined
+      ? {}
+      : { feedback: content(source, parts.feedbackStart, entry.valueEnd, format) }),
   }))
   const positive = answers.filter((item) => item.weight > 0)
-  if (!positive.length)
+  if (!positive.length) {
     diagnostics.push({
       severity: 'warning',
       code: 'GIFT_MULTIPLE_CHOICE_NO_POSITIVE_ANSWER',
       message: 'No choice has a positive weight.',
       range: base.range,
     })
-  if (answers.filter((item) => item.weight === 100).length > 1)
+  }
+  if (answers.filter((item) => item.weight === 100).length > 1) {
     diagnostics.push({
       severity: 'warning',
       code: 'GIFT_MULTIPLE_CHOICE_MULTIPLE_FULL_SCORES',
       message: 'Multiple choices receive full credit.',
       range: base.range,
     })
+  }
   return {
     ...base,
     kind: 'multiple-choice',
@@ -347,72 +454,120 @@ function parseQuestion(
   }
 }
 
+const categoryValueStart = (source: string, start: number, end: number): number | undefined => {
+  const cursor = new GiftCursor(source, start, end)
+  if (!cursor.startsWithIgnoringCase('$CATEGORY')) return undefined
+  cursor.advance('$CATEGORY'.length)
+  while (isWhitespace(cursor.peek())) cursor.advance()
+  if (!cursor.consumeIf(':')) return undefined
+  while (isWhitespace(cursor.peek())) cursor.advance()
+  return cursor.position
+}
+
+const parseCategoryPath = (source: string, start: number, end: number): string[] => {
+  const cursor = new GiftCursor(source, start, end)
+  const parts: string[] = []
+  let partStart = start
+  let value = ''
+  while (!cursor.eof) {
+    if (cursor.consumeIf('//')) {
+      value += `${source.slice(partStart, cursor.position - 2)}/`
+      partStart = cursor.position
+      continue
+    }
+    if (cursor.consumeIf('/')) {
+      value += source.slice(partStart, cursor.position - 1)
+      const part = unescapeGift(value.trim())
+      if (part) parts.push(part)
+      value = ''
+      partStart = cursor.position
+      continue
+    }
+    cursor.advance()
+  }
+  value += source.slice(partStart, end)
+  const part = unescapeGift(value.trim())
+  if (part) parts.push(part)
+  return parts
+}
+
+const braceDepthAfter = (source: string, start: number, end: number, initial: number): number => {
+  const cursor = new GiftCursor(source, start, end)
+  let depth = initial
+  while (!cursor.eof) {
+    if (cursor.peek() === '\\') {
+      cursor.advance(Math.min(2, end - cursor.position))
+      continue
+    }
+    if (cursor.peek() === '{') depth += 1
+    else if (cursor.peek() === '}') depth = Math.max(0, depth - 1)
+    cursor.advance()
+  }
+  return depth
+}
+
 export function parseGift(sourceInput: string, options: ParseGiftOptions = {}): ParseGiftResult {
-  const source = sourceInput.replace(/^\uFEFF/, '')
+  const source = sourceInput.startsWith('\uFEFF') ? sourceInput.slice(1) : sourceInput
   const diagnostics: GiftDiagnostic[] = []
   const children: GiftBlock[] = []
-  const lines = source.split(/(?<=\n)/)
-  let offset = 0
-  let buffer = ''
-  let bufferStart = 0
+  const cursor = new GiftCursor(source)
+  let blockStart: number | undefined
+  let blockEnd = 0
   let depth = 0
+
   const flush = (): void => {
-    const raw = buffer.trim()
-    if (raw) {
-      const leading = buffer.indexOf(raw)
-      const question = parseQuestion(source, raw, bufferStart + leading, diagnostics)
+    if (blockStart === undefined) return
+    const span = trimSpan(source, blockStart, blockEnd)
+    if (span.start < span.end) {
+      const question = parseQuestion(source, span.start, span.end, diagnostics)
       if (question) children.push(question)
     }
-    buffer = ''
+    blockStart = undefined
     depth = 0
   }
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!buffer && trimmed.startsWith('//')) {
+
+  while (!cursor.eof) {
+    const line = cursor.readLine()
+    const trimmed = trimSpan(source, line.start, line.end)
+    if (
+      blockStart === undefined &&
+      trimmed.start < trimmed.end &&
+      source.startsWith('//', trimmed.start)
+    ) {
       if (options.preserveComments !== false) {
-        const at = offset + line.indexOf('//')
+        let valueEnd = line.end
+        while (
+          valueEnd > trimmed.start &&
+          (source[valueEnd - 1] === '\r' || source[valueEnd - 1] === '\n')
+        ) {
+          valueEnd -= 1
+        }
         children.push({
           type: 'comment',
-          value: line.slice(line.indexOf('//') + 2).replace(/[\r\n]+$/, ''),
-          range: rangeAt(source, at, offset + line.replace(/[\r\n]+$/, '').length),
+          value: source.slice(trimmed.start + 2, valueEnd),
+          range: rangeAt(source, trimmed.start, valueEnd),
         })
       }
-      offset += line.length
       continue
     }
-    if (!buffer && /^\$CATEGORY\s*:/i.test(trimmed)) {
-      const at = offset + line.indexOf('$')
-      const pathText = trimmed.replace(/^\$CATEGORY\s*:\s*/i, '')
+    const pathStart =
+      blockStart === undefined ? categoryValueStart(source, trimmed.start, trimmed.end) : undefined
+    if (pathStart !== undefined) {
       children.push({
         type: 'category',
-        path: pathText
-          .split(/(?<!\/)\/(?!\/)/)
-          .map((part) => part.replaceAll('//', '/'))
-          .map((part) => unescapeGift(part.trim()))
-          .filter(Boolean),
-        range: rangeAt(source, at, offset + line.replace(/[\r\n]+$/, '').length),
+        path: parseCategoryPath(source, pathStart, trimmed.end),
+        range: rangeAt(source, trimmed.start, trimmed.end),
       })
-      offset += line.length
       continue
     }
-    if (!buffer && !trimmed) {
-      offset += line.length
-      continue
-    }
-    if (!buffer) bufferStart = offset
-    buffer += line
-    for (let i = 0; i < line.length; i += 1) {
-      if (line[i] === '\\') {
-        i += 1
-        continue
-      }
-      if (line[i] === '{') depth += 1
-      else if (line[i] === '}') depth = Math.max(0, depth - 1)
-    }
-    if (depth === 0 && /(?:\r?\n\s*){2}$/.test(buffer)) flush()
-    offset += line.length
+    if (blockStart === undefined && trimmed.start === trimmed.end) continue
+    if (blockStart === undefined) blockStart = line.start
+    blockEnd = line.end
+    depth = braceDepthAfter(source, line.start, line.end, depth)
+    if (depth === 0 && trimmed.start === trimmed.end) flush()
   }
   flush()
+
   const document: GiftDocument = {
     type: 'document',
     version: 1,
