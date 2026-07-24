@@ -99,6 +99,14 @@ async function removeAll(): Promise<void> {
               ? Number(($event.target as HTMLInputElement).value)
               : null
           " /></label
+      ><label
+        >{{ $locale.sfc.checkpointInterval
+        }}<input
+          v-model.number="settings.checkpointInterval"
+          type="number"
+          min="0"
+          max="1000"
+        /><small>{{ $locale.sfc.checkpointIntervalHint }}</small></label
       ><label class="check-row"
         ><input v-model="settings.shuffleChoices" type="checkbox" />{{ $locale.sfc.shuffle }}</label
       ><label class="check-row"
@@ -157,6 +165,8 @@ retention: 目標保持率
 retentionHint: 高くすると忘れにくくなりますが、毎日の復習量が増えます。
 newPerDay: 1日の新規問題数
 maxReviews: 1日の最大復習数（空欄は無制限）
+checkpointInterval: 途中結果を表示する回答数
+checkpointIntervalHint: 0にすると途中結果を表示しません。
 shuffle: 選択肢をシャッフルする
 immediateFeedback: 回答直後に正誤と解説を表示する
 appearance: 表示
@@ -186,6 +196,8 @@ retention: Desired retention
 retentionHint: Higher retention helps you forget less, but increases daily reviews.
 newPerDay: New questions per day
 maxReviews: Maximum reviews per day (blank for unlimited)
+checkpointInterval: Answers between progress reports
+checkpointIntervalHint: Set to 0 to disable progress reports.
 shuffle: Shuffle choices
 immediateFeedback: Show correctness and explanation immediately
 appearance: Appearance

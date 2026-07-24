@@ -162,8 +162,10 @@ export const reviewRepository = {
   },
 }
 export const settingsRepository = {
-  get: async (): Promise<SettingsRecord> =>
-    (await (await database()).get('settings', 'global')) ?? { ...defaultSettings },
+  get: async (): Promise<SettingsRecord> => ({
+    ...defaultSettings,
+    ...((await (await database()).get('settings', 'global')) ?? {}),
+  }),
   put: async (value: SettingsRecord): Promise<void> => {
     await (await database()).put('settings', plain(value))
   },

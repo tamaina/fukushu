@@ -7,6 +7,7 @@ import {
   database,
   deckRepository,
   questionRepository,
+  settingsRepository,
   stateRepository,
 } from '../src/infrastructure/db/database'
 import { createId } from '../src/utils/id'
@@ -134,13 +135,16 @@ describe('IndexedDB repositories', () => {
     const legacyBackup = structuredClone(backup) as unknown as {
       decks: Array<Record<string, unknown>>
       questions: Array<Record<string, unknown>>
+      settings: Record<string, unknown>
     }
     delete legacyBackup.decks[0]!.studyMode
     delete legacyBackup.questions[0]!.sourceOrder
+    delete legacyBackup.settings.checkpointInterval
     await clearDatabase()
     await restoreBackup(legacyBackup)
     expect((await deckRepository.all())[0]?.studyMode).toBe('quiz')
     expect((await questionRepository.byDeck(backup.decks[0]!.id))[0]?.sourceOrder).toBe(0)
+    expect((await settingsRepository.get()).checkpointInterval).toBe(20)
   })
 
   it('rejects an invalid backup before writing', async () => {

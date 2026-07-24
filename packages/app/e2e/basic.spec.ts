@@ -11,7 +11,7 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await page.getByRole('button', { name: '回答する' }).click()
   await expect(page.getByText(/正解（100点）/)).toBeVisible()
   await page.getByRole('button', { name: '正解' }).click()
-  await expect(page.getByRole('heading', { name: '今日の学習は完了です' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
   await expect(page.getByRole('link', { name: '問題集へ戻る' })).toHaveAttribute(
     'href',
     /\/decks\//,
@@ -103,7 +103,7 @@ test('can switch a deck to flashcard mode and self-rate the revealed answer', as
   await expect(page.getByText('東京', { exact: true })).toBeVisible()
   await expect(page.getByText('大阪', { exact: true })).toBeHidden()
   await page.getByRole('button', { name: 'わかった' }).click()
-  await expect(page.getByRole('heading', { name: '今日の学習は完了です' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
 })
 
 test('accepts a decimal numerical answer with Enter', async ({ page }) => {
@@ -171,7 +171,7 @@ test('can study a deck in cram mode when no questions are due', async ({ page })
   await page.getByText('正しい', { exact: true }).click()
   await page.getByRole('button', { name: '回答する' }).click()
   await page.getByRole('button', { name: '正解' }).click()
-  await expect(page.getByRole('heading', { name: '今日の学習は完了です' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
 
   await page.goto('/decks')
   await page.getByText('詰め込み問題集').click()
@@ -197,7 +197,7 @@ test('gives partial credit and allows Again or Hard after a partial answer', asy
   await expect(page.getByRole('button', { name: '正解' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '簡単' })).toBeDisabled()
   await page.getByRole('button', { name: '難しかった' }).click()
-  await expect(page.getByRole('heading', { name: '今日の学習は完了です' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '0問正解' })).toBeVisible()
   await page.goto('/history')
   await expect(page.getByText('hard', { exact: true })).toBeVisible()
 })
@@ -217,6 +217,68 @@ test('can defer answer feedback until the learner reveals it', async ({ page }) 
   await expect(page.getByText(/正解（100点）/)).toBeHidden()
   await page.getByRole('button', { name: '結果と解説を表示' }).click()
   await expect(page.getByText(/正解（100点）/)).toBeVisible()
+})
+
+test('shows configurable progress reports and a detailed final result', async ({ page }) => {
+  await page.goto('/settings')
+  await page.getByLabel('途中結果を表示する回答数').fill('2')
+  await expect(page.getByText('保存しました')).toBeVisible()
+
+  await page.goto('/import')
+  await page.getByLabel('問題集名').fill('途中結果')
+  await page
+    .getByLabel('GIFTテキスト')
+    .fill('::Q1::1問目 {TRUE}\n\n::Q2::2問目 {TRUE}\n\n::Q3::3問目 {TRUE}')
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await page.getByRole('link', { name: 'この問題集を学習' }).click()
+
+  await page.getByText('正しい', { exact: true }).click()
+  await page.getByRole('button', { name: '回答する' }).click()
+  await page.getByRole('button', { name: '正解' }).click()
+
+  await page.getByRole('button', { name: '中断する' }).click()
+  await expect(page.getByText('中断時点の結果', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
+  await expect(page.locator('.result-table-wrap tbody tr')).toHaveCount(1)
+  await expect(page.getByRole('link', { name: '問題集へ戻る' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByText('中断時点の結果', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '学習を続ける' }).click()
+
+  await page.getByText('誤り', { exact: true }).click()
+  await page.getByRole('button', { name: '回答する' }).click()
+  await page.getByRole('button', { name: '難しかった' }).click()
+
+  await expect(page.getByText('途中結果', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
+  await expect(page.getByText('誤答 1問・回答 2問・正答率 50%')).toBeVisible()
+  const resultQuestions = page.locator('.result-table-wrap tbody tr')
+  await expect(resultQuestions).toHaveCount(2)
+  await expect(resultQuestions.first().locator('.result-badge-incorrect')).toBeVisible()
+  await expect(page.getByText('難しかった', { exact: true })).toBeVisible()
+  await resultQuestions
+    .first()
+    .getByRole('button', { name: /プレビュー/ })
+    .click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.getByRole('button', { name: '閉じる' }).click()
+  await expect(page.getByLabel('共有用の結果テキスト')).toHaveValue(
+    /結果: 正答1問\/誤答1問\/回答2問 \(正答率50%\)/,
+  )
+  await expect(page.getByRole('button', { name: 'コピー' })).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByText('途中結果', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '学習を続ける' }).click()
+  await page.getByText('正しい', { exact: true }).click()
+  await page.getByRole('button', { name: '回答する' }).click()
+  await page.getByRole('button', { name: '簡単' }).click()
+
+  await expect(page.getByText('学習結果', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '2問正解' })).toBeVisible()
+  await expect(page.getByText('誤答 1問・回答 3問・正答率 67%')).toBeVisible()
+  await expect(page.locator('.result-table-wrap tbody tr')).toHaveCount(3)
 })
 
 test('translates import, deck detail, and study pages into English', async ({ page }) => {

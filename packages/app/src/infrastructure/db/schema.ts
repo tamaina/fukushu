@@ -75,6 +75,7 @@ export interface SettingsRecord {
   desiredRetention: number
   newQuestionsPerDay: number
   maxReviewsPerDay: number | null
+  checkpointInterval: number
   shuffleChoices: boolean
   showImmediateFeedback: boolean
   locale: 'ja' | 'en'
@@ -127,6 +128,7 @@ export const defaultSettings: SettingsRecord = {
   desiredRetention: 0.9,
   newQuestionsPerDay: 20,
   maxReviewsPerDay: null,
+  checkpointInterval: 20,
   shuffleChoices: true,
   showImmediateFeedback: true,
   locale: 'ja',

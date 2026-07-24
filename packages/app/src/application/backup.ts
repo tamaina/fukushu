@@ -133,6 +133,7 @@ const SettingsSchema = v.strictObject({
   desiredRetention: bounded(0.8, 0.97),
   newQuestionsPerDay: v.pipe(integer(), v.maxValue(200)),
   maxReviewsPerDay: v.nullable(v.pipe(integer(1), v.maxValue(1000))),
+  checkpointInterval: v.optional(v.pipe(integer(), v.maxValue(1000)), 20),
   shuffleChoices: v.boolean(),
   showImmediateFeedback: v.boolean(),
   locale: v.picklist(['ja', 'en']),

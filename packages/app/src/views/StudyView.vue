@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Check, X } from '@lucide/vue'
 import ContentRenderer from '../components/ContentRenderer.vue'
+import StudyResults, { type StudyResultItem } from '../components/StudyResults.vue'
 import { buildStudyQueue, recordReview, type StudyItem } from '../application/study'
 import { gradeQuestion } from '../domain/quiz/grading'
 import { systemClock } from '../domain/time'
@@ -14,10 +15,31 @@ import {
   stateRepository,
 } from '../infrastructure/db/database'
 import type { GradeResult, QuizChoice } from '../domain/quiz/types'
+
+interface StoredStudyResult {
+  questionId: string
+  rating: AppRating
+  correct: boolean
+}
+interface StoredStudySession {
+  deckId: string | null
+  cram?: boolean
+  questionIds: string[]
+  index?: number
+  results?: StoredStudyResult[]
+  checkpointVisible?: boolean
+  interruptionVisible?: boolean
+}
+
 const route = useRoute()
 const router = useRouter()
 const queue = ref<StudyItem[]>([])
 const index = ref(0)
+const results = ref<StoredStudyResult[]>([])
+const checkpointVisible = ref(false)
+const interruptionVisible = ref(false)
+const checkpointInterval = ref(20)
+const loaded = ref(false)
 const selected = ref<string[]>([])
 const text = ref('')
 const graded = ref<GradeResult>()
@@ -27,6 +49,20 @@ const started = ref(0)
 const busy = ref(false)
 const nextDue = ref('')
 const item = computed(() => queue.value[index.value])
+const resultItems = computed<StudyResultItem[]>(() =>
+  results.value.flatMap((result) => {
+    const entry = queue.value.find((candidate) => candidate.question.id === result.questionId)
+    return entry
+      ? [{ question: entry.question, rating: result.rating, correct: result.correct }]
+      : []
+  }),
+)
+const showResults = computed(
+  () =>
+    loaded.value &&
+    queue.value.length > 0 &&
+    (checkpointVisible.value || interruptionVisible.value || index.value >= queue.value.length),
+)
 const question = computed(() => item.value?.question.payload)
 const isFlashcard = computed(() => item.value?.studyMode === 'flashcard')
 const backTarget = computed(() =>
@@ -68,6 +104,38 @@ const numericalAnswers = computed(() => {
     })
 })
 const sessionKey = 'fukushu-study-session-v1'
+function persistSession(): void {
+  sessionStorage.setItem(
+    sessionKey,
+    JSON.stringify({
+      deckId: typeof route.query.deck === 'string' ? route.query.deck : null,
+      cram: route.query.cram === '1',
+      questionIds: queue.value.map((entry) => entry.question.id),
+      index: index.value,
+      results: results.value,
+      checkpointVisible: checkpointVisible.value,
+      interruptionVisible: interruptionVisible.value,
+    } satisfies StoredStudySession),
+  )
+}
+function continueStudy(): void {
+  checkpointVisible.value = false
+  interruptionVisible.value = false
+  persistSession()
+  started.value = Date.now()
+}
+async function stopStudy(): Promise<void> {
+  if (!results.value.length) {
+    await router.push(backTarget.value)
+    return
+  }
+  checkpointVisible.value = false
+  interruptionVisible.value = true
+  persistSession()
+}
+function leaveResults(): void {
+  sessionStorage.removeItem(sessionKey)
+}
 function toggle(id: string): void {
   if (!question.value || graded.value) return
   if (question.value.kind === 'single-choice') selected.value = [id]
@@ -125,6 +193,11 @@ async function rate(rating: AppRating): Promise<void> {
     Date.now() - started.value,
     systemClock,
   )
+  results.value.push({
+    questionId: item.value.question.id,
+    rating,
+    correct: isFlashcard.value ? rating !== 'again' : graded.value!.correct,
+  })
   index.value += 1
   selected.value = []
   text.value = ''
@@ -136,22 +209,22 @@ async function rate(rating: AppRating): Promise<void> {
   busy.value = false
   const remaining = queue.value.slice(index.value)
   if (remaining.length) {
-    sessionStorage.setItem(
-      sessionKey,
-      JSON.stringify({
-        deckId: typeof route.query.deck === 'string' ? route.query.deck : null,
-        cram: route.query.cram === '1',
-        questionIds: remaining.map((entry) => entry.question.id),
-      }),
-    )
-  } else sessionStorage.removeItem(sessionKey)
+    checkpointVisible.value =
+      checkpointInterval.value > 0 && index.value % checkpointInterval.value === 0
+    persistSession()
+  } else {
+    checkpointVisible.value = false
+    sessionStorage.removeItem(sessionKey)
+  }
 }
 onMounted(async () => {
   const deckId = typeof route.query.deck === 'string' ? route.query.deck : undefined
   let cram = route.query.cram === '1'
-  let restored: { deckId: string | null; cram?: boolean; questionIds: string[] } | undefined
+  const settings = await settingsRepository.get()
+  checkpointInterval.value = settings.checkpointInterval
+  let restored: StoredStudySession | undefined
   try {
-    restored = JSON.parse(sessionStorage.getItem(sessionKey) ?? '') as typeof restored
+    restored = JSON.parse(sessionStorage.getItem(sessionKey) ?? '') as StoredStudySession
   } catch {
     // Missing or invalid session data starts a fresh session.
   }
@@ -176,6 +249,22 @@ onMounted(async () => {
         })
       }
     }
+    index.value = Math.min(
+      Math.max(Number.isInteger(restored.index) ? (restored.index ?? 0) : 0, 0),
+      queue.value.length,
+    )
+    results.value = Array.isArray(restored.results)
+      ? restored.results.filter(
+          (result) =>
+            queue.value.some((entry) => entry.question.id === result.questionId) &&
+            ['again', 'hard', 'good', 'easy'].includes(result.rating) &&
+            typeof result.correct === 'boolean',
+        )
+      : []
+    checkpointVisible.value =
+      Boolean(restored.checkpointVisible) && index.value < queue.value.length
+    interruptionVisible.value =
+      Boolean(restored.interruptionVisible) && index.value < queue.value.length
   }
   if (!queue.value.length) {
     queue.value = await buildStudyQueue(systemClock, deckId, cram)
@@ -184,27 +273,36 @@ onMounted(async () => {
       await router.replace({ query: { ...route.query, cram: '1' } })
       queue.value = await buildStudyQueue(systemClock, deckId, true)
     }
+    index.value = 0
+    results.value = []
+    checkpointVisible.value = false
+    interruptionVisible.value = false
   }
   if (queue.value.length) {
-    sessionStorage.setItem(
-      sessionKey,
-      JSON.stringify({
-        deckId: deckId ?? null,
-        cram,
-        questionIds: queue.value.map((entry) => entry.question.id),
-      }),
-    )
+    persistSession()
   } else sessionStorage.removeItem(sessionKey)
-  index.value = 0
   started.value = Date.now()
+  loaded.value = true
 })
 </script>
 <template>
   <div class="page study-page">
-    <div v-if="item && question">
+    <StudyResults
+      v-if="showResults"
+      :final="index >= queue.length"
+      :interrupted="interruptionVisible"
+      :items="resultItems"
+      :back-target="backTarget"
+      :back-label="
+        typeof route.query.deck === 'string' ? $locale.sfc.backToDeck : $locale.sfc.backHome
+      "
+      @continue="continueStudy"
+      @leave="leaveResults"
+    />
+    <div v-else-if="item && question">
       <header class="study-header">
         <span>{{ progress }} · {{ $l.sfc.remaining({ count: queue.length - index - 1 }) }}</span>
-        <button class="text-button" @click="router.push(backTarget)">
+        <button class="text-button" @click="stopStudy">
           {{ $locale.sfc.stop }}
         </button>
       </header>
@@ -393,7 +491,7 @@ onMounted(async () => {
         </section>
       </article>
     </div>
-    <div v-else class="empty-state">
+    <div v-else-if="loaded" class="empty-state">
       <h1>
         {{ queue.length ? $locale.sfc.completedTitle : $locale.sfc.noQuestionsTitle }}
       </h1>
