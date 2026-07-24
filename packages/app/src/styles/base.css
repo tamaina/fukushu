@@ -453,14 +453,29 @@ section + section {
   border-color: transparent;
 }
 .rating-pill.again.active {
-  background: color-mix(in srgb, var(--color-danger) 35%, #36413c);
+  background: color-mix(in srgb, var(--color-danger) 95%, #444444);
 }
 .rating-pill.hard.active {
-  background: color-mix(in srgb, var(--color-warning) 35%, #36413c);
+  background: color-mix(in srgb, var(--color-warning) 95%, #444444);
 }
 .rating-pill.good.active,
 .rating-pill.easy.active {
-  background: color-mix(in srgb, var(--color-success) 35%, #36413c);
+  background: color-mix(in srgb, var(--color-success) 35%, #444444);
+}
+.rating-pill.unseen.active {
+  background: color-mix(in srgb, var(--color-muted) 35%, #444444);
+}
+.deck-rating-distribution {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.deck-summary {
+  margin-bottom: var(--space-1);
+}
+.deck-rating-distribution .rating-pill {
+  padding: 3px 8px;
+  font-size: 0.75rem;
 }
 .question-controls {
   display: flex;
@@ -892,6 +907,7 @@ td {
   }
   .deck-detail-actions {
     justify-items: start;
+    margin-top: var(--space-5);
   }
   .deck-study-actions {
     width: 100%;

@@ -6,6 +6,9 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await page.getByRole('button', { name: '解析する' }).click()
   await expect(page.getByText('1 問を読み込みます。')).toBeVisible()
   await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(
+    page.getByLabel('Ratingの割合: もう一度 0%、難しかった 0%、正解 0%、簡単 0%、未出題 100%'),
+  ).toBeVisible()
   await page.getByRole('link', { name: 'この問題集を学習' }).click()
   await page.getByText('東京').click()
   await page.getByRole('button', { name: '回答する' }).click()
@@ -21,7 +24,10 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await page.getByText('基本問題').click()
   await expect(page.getByText('1回答')).toBeVisible()
   await expect(page.getByLabel('Rating: もう一度 0、難しかった 0、正解 1、簡単 0')).toBeVisible()
-  await expect(page.locator('.rating-pill.good.active')).toHaveText('正解 1')
+  await expect(page.locator('.question-ratings .rating-pill.good.active')).toHaveText('正解 1')
+  await expect(
+    page.getByLabel('Ratingの割合: もう一度 0%、難しかった 0%、正解 100%、簡単 0%、未出題 0%'),
+  ).toBeVisible()
   const studyLink = page.getByRole('link', { name: 'この問題集を学習' })
   const studyLinkBox = await studyLink.boundingBox()
   await page.getByRole('button', { name: '「首都」をプレビュー' }).click()

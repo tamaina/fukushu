@@ -8,6 +8,9 @@ import { resetDeckHistory, setDeckStudyMode, setQuestionEnabled } from '../appli
 import type { DeckRecord, QuestionRecord, ReviewLogRecord } from '../infrastructure/db/schema'
 
 type RatingCounts = Record<ReviewLogRecord['rating'], number>
+type DeckRatingCategory = ReviewLogRecord['rating'] | 'unseen'
+
+const deckRatingCategories: DeckRatingCategory[] = ['again', 'hard', 'good', 'easy', 'unseen']
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +33,43 @@ const visible = computed(() =>
     ? questions.value.filter((q) => q.payload.categoryPath.join(' / ') === category.value)
     : questions.value,
 )
+const deckRatingPercentages = computed<Record<DeckRatingCategory, number>>(() => {
+  const counts: Record<DeckRatingCategory, number> = {
+    again: 0,
+    hard: 0,
+    good: 0,
+    easy: 0,
+    unseen: 0,
+  }
+  for (const question of questions.value) {
+    counts[latestRatings.value[question.id] ?? 'unseen'] += 1
+  }
+  if (questions.value.length === 0) {
+    return { again: 0, hard: 0, good: 0, easy: 0, unseen: 0 }
+  }
+
+  // Allocate tenths of a percent by largest remainder so the displayed values total 100%.
+  const exactUnits = deckRatingCategories.map(
+    (rating) => (counts[rating] * 1000) / questions.value.length,
+  )
+  const allocatedUnits = exactUnits.map(Math.floor)
+  let remainingUnits = 1000 - allocatedUnits.reduce((sum, value) => sum + value, 0)
+  const remainderOrder = exactUnits
+    .map((value, index) => ({ index, remainder: value - allocatedUnits[index]! }))
+    .sort((left, right) => right.remainder - left.remainder)
+  for (const { index } of remainderOrder) {
+    if (remainingUnits === 0) break
+    allocatedUnits[index]! += 1
+    remainingUnits -= 1
+  }
+
+  return Object.fromEntries(
+    deckRatingCategories.map((rating, index) => [rating, allocatedUnits[index]! / 10]),
+  ) as Record<DeckRatingCategory, number>
+})
+function percentageLabel(value: number): string {
+  return `${value}%`
+}
 async function load(): Promise<void> {
   deck.value = await deckRepository.get(deckId)
   questions.value = await questionRepository.byDeck(deckId)
@@ -96,7 +136,7 @@ onMounted(load)
       <div>
         <p class="eyebrow">{{ $locale.sfc.deck }}</p>
         <h1>{{ deck.name }}</h1>
-        <p>
+        <p class="deck-summary">
           {{
             $l.sfc.deckSummary({
               total: deck.questionCount,
@@ -104,6 +144,34 @@ onMounted(load)
             })
           }}
         </p>
+        <div
+          class="deck-rating-distribution"
+          :aria-label="
+            $l.sfc.deckRatingSummary({
+              again: percentageLabel(deckRatingPercentages.again),
+              hard: percentageLabel(deckRatingPercentages.hard),
+              good: percentageLabel(deckRatingPercentages.good),
+              easy: percentageLabel(deckRatingPercentages.easy),
+              unseen: percentageLabel(deckRatingPercentages.unseen),
+            })
+          "
+        >
+          <span class="rating-pill again active"
+            >{{ $locale.sfc.again }} {{ percentageLabel(deckRatingPercentages.again) }}</span
+          >
+          <span class="rating-pill hard active"
+            >{{ $locale.sfc.hard }} {{ percentageLabel(deckRatingPercentages.hard) }}</span
+          >
+          <span class="rating-pill good active"
+            >{{ $locale.sfc.good }} {{ percentageLabel(deckRatingPercentages.good) }}</span
+          >
+          <span class="rating-pill easy active"
+            >{{ $locale.sfc.easy }} {{ percentageLabel(deckRatingPercentages.easy) }}</span
+          >
+          <span class="rating-pill unseen active"
+            >{{ $locale.sfc.unseen }} {{ percentageLabel(deckRatingPercentages.unseen) }}</span
+          >
+        </div>
       </div>
       <div class="deck-detail-actions">
         <div class="actions deck-study-actions">
@@ -273,6 +341,7 @@ onMounted(load)
 <locale locale="ja-JP" lang="yaml">
 deck: 問題集
 deckSummary: '{total}問・{enabled}問が有効'
+deckRatingSummary: 'Ratingの割合: もう一度 {again}、難しかった {hard}、正解 {good}、簡単 {easy}、未出題 {unseen}'
 studyDeck: この問題集を学習
 cramAll: 全問を詰め込み学習
 saveGift: GIFTを保存
@@ -293,6 +362,7 @@ again: もう一度
 hard: 難
 good: 正解
 easy: 簡単
+unseen: 未出題
 disable: 停止する
 enable: 再開する
 resetHistory: 学習履歴のリセット
@@ -310,6 +380,7 @@ notFound: 問題集が見つかりません。
 <locale locale="en-US" lang="yaml">
 deck: Deck
 deckSummary: '{total} questions · {enabled} enabled'
+deckRatingSummary: 'Rating distribution: Again {again}, Hard {hard}, Good {good}, Easy {easy}, Unseen {unseen}'
 studyDeck: Study this deck
 cramAll: Cram all questions
 saveGift: Save GIFT
@@ -330,6 +401,7 @@ again: Again
 hard: Hard
 good: Good
 easy: Easy
+unseen: Unseen
 disable: Disable
 enable: Enable
 resetHistory: Reset study history
