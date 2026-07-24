@@ -261,7 +261,9 @@ test('shows configurable progress reports and a detailed final result', async ({
     .first()
     .getByRole('button', { name: /プレビュー/ })
     .click()
-  await expect(page.getByRole('dialog')).toBeVisible()
+  const previewDialog = page.getByRole('dialog')
+  await expect(previewDialog).toBeVisible()
+  await expect(previewDialog).toHaveCSS('text-align', 'left')
   await page.getByRole('button', { name: '閉じる' }).click()
   await expect(page.getByLabel('共有用の結果テキスト')).toHaveValue(
     /結果: 正答1問\/誤答1問\/回答2問 \(正答率50%\)/,
