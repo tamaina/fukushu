@@ -473,6 +473,9 @@ section + section {
   width: 16px;
   height: 16px;
 }
+.preview-trigger {
+  white-space: nowrap;
+}
 .question-preview-popover,
 .confirmation-dialog {
   width: min(560px, calc(100vw - 32px));
