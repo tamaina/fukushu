@@ -28,6 +28,11 @@ function shuffled<T>(values: readonly T[]): T[] {
     const target = Math.floor(Math.random() * (index + 1))
     ;[result[index], result[target]] = [result[target]!, result[index]!]
   }
+  // A mathematically valid shuffle can return the original order, but that looks
+  // broken in a study UI. Ensure a visible change whenever there is a choice.
+  if (result.length > 1 && result.every((value, index) => value === values[index])) {
+    result.push(result.shift()!)
+  }
   return result
 }
 export function prepareQuestion(question: QuestionRecord, shuffle: boolean): QuestionRecord {

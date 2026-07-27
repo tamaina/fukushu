@@ -4,7 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { Check, X } from '@lucide/vue'
 import ContentRenderer from '../components/ContentRenderer.vue'
 import StudyResults, { type StudyResultItem } from '../components/StudyResults.vue'
-import { buildStudyQueue, recordReview, type StudyItem } from '../application/study'
+import {
+  buildStudyQueue,
+  prepareQuestion,
+  recordReview,
+  type StudyItem,
+} from '../application/study'
 import { gradeQuestion } from '../domain/quiz/grading'
 import { systemClock } from '../domain/time'
 import { ratingFromResult, review, type AppRating } from '../infrastructure/fsrs/adapter'
@@ -277,7 +282,7 @@ onMounted(async () => {
       const deck = question ? await deckRepository.get(question.deckId) : undefined
       if (question?.enabled && state && !state.suspended) {
         queue.value.push({
-          question,
+          question: prepareQuestion(question, settings.shuffleChoices),
           state,
           isNew: state.card.reps === 0,
           deckName: deck?.name ?? '',
