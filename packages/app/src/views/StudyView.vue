@@ -42,6 +42,7 @@ const checkpointInterval = ref(20)
 const loaded = ref(false)
 const selected = ref<string[]>([])
 const text = ref('')
+const matchingAnswers = ref<Record<string, string>>({})
 const graded = ref<GradeResult>()
 const feedbackVisible = ref(false)
 const answerVisible = ref(false)
@@ -73,11 +74,28 @@ const progress = computed(
 )
 const canAnswer = computed(() => {
   if (!question.value || question.value.kind === 'unsupported') return false
-  if (question.value.kind === 'short-answer') return Boolean(text.value.trim())
+  if (question.value.kind === 'short-answer' || question.value.kind === 'essay')
+    return Boolean(text.value.trim())
   if (question.value.kind === 'numerical')
     return Boolean(text.value.trim()) && Number.isFinite(Number(text.value.trim()))
+  if (question.value.kind === 'matching')
+    return question.value.pairs.every((pair) => Boolean(matchingAnswers.value[pair.id]))
+  if (question.value.kind === 'description') return true
   return selected.value.length > 0
 })
+const matchingOptions = computed(() =>
+  question.value?.kind === 'matching'
+    ? (question.value.matchingOptionOrder ?? question.value.pairs.map((pair) => pair.id)).flatMap(
+        (id) => {
+          const pair =
+            question.value?.kind === 'matching'
+              ? question.value.pairs.find((candidate) => candidate.id === id)
+              : undefined
+          return pair ? [{ id: pair.id, content: pair.right }] : []
+        },
+      )
+    : [],
+)
 const correctShortAnswers = computed(() => {
   if (question.value?.kind !== 'short-answer') return []
   return question.value.answers
@@ -156,10 +174,19 @@ function trueFalseCorrect(id: string): boolean {
 async function grade(): Promise<void> {
   if (!question.value) return
   const answer =
-    question.value.kind === 'short-answer' || question.value.kind === 'numerical'
+    question.value.kind === 'short-answer' ||
+    question.value.kind === 'numerical' ||
+    question.value.kind === 'essay'
       ? [text.value]
-      : selected.value
-  graded.value = gradeQuestion(question.value, answer)
+      : question.value.kind === 'matching'
+        ? question.value.pairs.map(
+            (pair) => `${pair.id}\u0000${matchingAnswers.value[pair.id] ?? ''}`,
+          )
+        : selected.value
+  graded.value =
+    question.value.kind === 'essay' || question.value.kind === 'description'
+      ? { score: 100, correct: true, feedback: [] }
+      : gradeQuestion(question.value, answer)
   const settings = await settingsRepository.get()
   feedbackVisible.value = settings.showImmediateFeedback
   nextDue.value = review(
@@ -182,13 +209,21 @@ async function rate(rating: AppRating): Promise<void> {
   if (!item.value || (!isFlashcard.value && !graded.value)) return
   busy.value = true
   const answer =
-    question.value?.kind === 'short-answer' || question.value?.kind === 'numerical'
+    question.value?.kind === 'short-answer' ||
+    question.value?.kind === 'numerical' ||
+    question.value?.kind === 'essay'
       ? [text.value]
-      : selected.value
+      : question.value?.kind === 'matching'
+        ? question.value.pairs.map(
+            (pair) => `${pair.id}\u0000${matchingAnswers.value[pair.id] ?? ''}`,
+          )
+        : selected.value
   await recordReview(
     item.value,
     rating,
-    isFlashcard.value ? rating !== 'again' : graded.value!.correct,
+    isFlashcard.value || question.value?.kind === 'essay' || question.value?.kind === 'description'
+      ? rating !== 'again'
+      : graded.value!.correct,
     isFlashcard.value ? [] : answer,
     Date.now() - started.value,
     systemClock,
@@ -201,6 +236,7 @@ async function rate(rating: AppRating): Promise<void> {
   index.value += 1
   selected.value = []
   text.value = ''
+  matchingAnswers.value = {}
   graded.value = undefined
   feedbackVisible.value = false
   answerVisible.value = false
@@ -404,6 +440,25 @@ onMounted(async () => {
               inputmode="decimal"
               @keydown.enter="gradeOnEnter"
           /></label>
+          <div v-else-if="question.kind === 'matching'" class="matching-question">
+            <label v-for="pair in question.pairs" :key="pair.id" class="matching-row">
+              <ContentRenderer :content="pair.left" />
+              <span aria-hidden="true">→</span>
+              <select v-model="matchingAnswers[pair.id]" :disabled="!!graded">
+                <option value="">{{ $locale.sfc.chooseMatch }}</option>
+                <option v-for="option in matchingOptions" :key="option.id" :value="option.id">
+                  {{ option.content.value }}
+                </option>
+              </select>
+            </label>
+          </div>
+          <label v-else-if="question.kind === 'essay'"
+            >{{ $locale.sfc.essayAnswer
+            }}<textarea v-model="text" :disabled="!!graded" rows="7"></textarea>
+          </label>
+          <div v-else-if="question.kind === 'description'" class="message">
+            {{ $locale.sfc.descriptionPrompt }}
+          </div>
           <div v-else class="message warning">
             {{ $l.sfc.unsupported({ kind: question.sourceKind }) }}
           </div>
@@ -469,6 +524,16 @@ onMounted(async () => {
               {{ i ? ' / ' : '' }}{{ answer }}
             </span>
           </div>
+          <div v-if="question.kind === 'matching'" class="message">
+            <strong>{{ $locale.sfc.correctAnswers }}</strong>
+            <div v-for="pair in question.pairs" :key="pair.id" class="matching-solution">
+              <ContentRenderer :content="pair.left" /><span>→</span
+              ><ContentRenderer :content="pair.right" />
+            </div>
+          </div>
+          <div v-if="question.kind === 'essay' || question.kind === 'description'" class="message">
+            {{ $locale.sfc.selfAssessmentPrompt }}
+          </div>
           <div v-for="(feedback, i) in graded.feedback" :key="i" class="message">
             <ContentRenderer :content="feedback" />
           </div>
@@ -478,9 +543,22 @@ onMounted(async () => {
               {{ $locale.sfc.again }}</button
             ><button :disabled="busy" class="secondary" @click="rate('hard')">
               {{ $locale.sfc.hard }}</button
-            ><button :disabled="busy || !graded.correct" @click="rate('good')">
+            ><button
+              :disabled="
+                busy ||
+                (!graded.correct && question.kind !== 'essay' && question.kind !== 'description')
+              "
+              @click="rate('good')"
+            >
               {{ $locale.sfc.correct }}</button
-            ><button :disabled="busy || !graded.correct" class="secondary" @click="rate('easy')">
+            ><button
+              :disabled="
+                busy ||
+                (!graded.correct && question.kind !== 'essay' && question.kind !== 'description')
+              "
+              class="secondary"
+              @click="rate('easy')"
+            >
               {{ $locale.sfc.easy }}
             </button>
           </div>
@@ -523,6 +601,10 @@ trueLabel: 正しい
 falseLabel: 誤り
 answer: 解答
 numericalAnswer: 数値で解答
+chooseMatch: 対応する項目を選択
+essayAnswer: 記述式の解答
+descriptionPrompt: 内容を確認したら「回答する」を押してください。
+selfAssessmentPrompt: 解答と解説を確認し、自分の理解度を下のボタンで評価してください。
 unsupported: 'この問題形式（{kind}）は、このバージョンでは出題できません。'
 submitAnswer: 回答する
 showFeedback: 結果と解説を表示
@@ -562,6 +644,10 @@ trueLabel: 'True'
 falseLabel: 'False'
 answer: Answer
 numericalAnswer: Numerical answer
+chooseMatch: Choose a match
+essayAnswer: Essay answer
+descriptionPrompt: Review the content, then select Submit answer.
+selfAssessmentPrompt: Review your response and the explanation, then rate your understanding below.
 unsupported: 'This question type ({kind}) cannot be studied in this version.'
 submitAnswer: Submit answer
 showFeedback: Show result and explanation

@@ -92,6 +92,18 @@ describe('IndexedDB repositories', () => {
     expect((await stateRepository.all())[0]?.card.reps).toBe(0)
   })
 
+  it('imports matching, essay, and description questions as studyable kinds', async () => {
+    const preview = await previewGift(
+      'Match {=Japan -> Tokyo =France -> Paris}\n\nEssay prompt {}\n\nDescription only',
+      createId(),
+    )
+    expect(preview.questions.map((question) => question.kind)).toEqual([
+      'matching',
+      'essay',
+      'description',
+    ])
+  })
+
   it('preserves GIFT source order across imports and reordered updates', async () => {
     const deckId = await saveNewDeck(
       'ordered',

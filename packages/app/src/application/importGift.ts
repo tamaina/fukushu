@@ -27,7 +27,12 @@ const fingerprint = (question: GiftQuestion, categoryPath: string[]): string =>
             ? question.answers.map((a) => [normalize(a.value), a.weight])
             : question.kind === 'numerical'
               ? question.answers
-              : question.kind,
+              : question.kind === 'matching'
+                ? question.pairs.map((pair) => [
+                    normalize(pair.left.value),
+                    normalize(pair.right.value),
+                  ])
+                : question.kind,
   })
 
 async function convert(
@@ -107,7 +112,19 @@ async function convert(
               },
       ),
     }
-  return { ...common, kind: 'unsupported', sourceKind: question.kind }
+  if (question.kind === 'matching')
+    return {
+      ...common,
+      kind: 'matching',
+      pairs: question.pairs.map((pair) => ({
+        id: createId(),
+        left: toContent(pair.left),
+        right: toContent(pair.right),
+      })),
+    }
+  if (question.kind === 'essay') return { ...common, kind: 'essay' }
+  if (question.kind === 'description') return { ...common, kind: 'description' }
+  throw new Error('Unsupported GIFT question kind.')
 }
 
 export interface ImportPreview {

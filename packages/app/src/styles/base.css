@@ -597,6 +597,20 @@ section + section {
   margin-bottom: var(--space-6);
   font-size: 1.15rem;
 }
+.matching-question {
+  display: grid;
+  gap: var(--space-3);
+}
+.matching-row,
+.matching-solution {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+.matching-row select {
+  width: 100%;
+}
 .choices {
   display: grid;
   gap: var(--space-3);

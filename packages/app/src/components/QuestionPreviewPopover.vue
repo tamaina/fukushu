@@ -123,6 +123,17 @@ function closePreview(): void {
     <p v-else-if="question.kind === 'numerical'" class="preview-correct-answer">
       <strong>{{ $locale.sfc.correctAnswer }}</strong> {{ numericalAnswers.join(' / ') }}
     </p>
+    <div v-else-if="question.kind === 'matching'" class="message">
+      <strong>{{ $locale.sfc.correctAnswer }}</strong>
+      <div v-for="pair in question.pairs" :key="pair.id" class="matching-solution">
+        <ContentRenderer :content="pair.left" /><span>→</span
+        ><ContentRenderer :content="pair.right" />
+      </div>
+    </div>
+    <p v-else-if="question.kind === 'essay'" class="muted">{{ $locale.sfc.essay }}</p>
+    <p v-else-if="question.kind === 'description'" class="muted">
+      {{ $locale.sfc.description }}
+    </p>
     <p v-else class="muted">{{ $locale.sfc.unsupported }}</p>
 
     <div v-if="question.explanation" class="preview-explanation">
@@ -142,6 +153,8 @@ choices: 選択肢
 trueLabel: 正しい
 falseLabel: 誤り
 unsupported: この問題形式はプレビューに対応していません。
+essay: 記述式問題（学習時に自己評価します）
+description: 説明カード
 explanation: 解説
 </locale>
 
@@ -155,5 +168,7 @@ choices: Choices
 trueLabel: 'True'
 falseLabel: 'False'
 unsupported: This question type cannot be previewed.
+essay: Essay question (self-assessed during study)
+description: Description card
 explanation: Explanation
 </locale>

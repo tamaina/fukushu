@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { gradeQuestion } from '../src/domain/quiz/grading'
 import type {
+  MatchingQuestion,
   MultipleChoiceQuestion,
   NumericalQuestion,
   ShortAnswerQuestion,
@@ -52,6 +53,33 @@ describe('grading', () => {
       gradeQuestion({ ...question, answers: [{ value: 'Ａ', weight: 100 }] }, ['a']).correct,
     ).toBe(true)
   })
+  it('grades matching pairs only when every pair is correct', () => {
+    const question: MatchingQuestion = {
+      ...base,
+      kind: 'matching',
+      pairs: [
+        {
+          id: 'a',
+          left: { format: 'plain', value: 'Japan' },
+          right: { format: 'plain', value: 'Tokyo' },
+        },
+        {
+          id: 'b',
+          left: { format: 'plain', value: 'France' },
+          right: { format: 'plain', value: 'Paris' },
+        },
+      ],
+    }
+    expect(gradeQuestion(question, ['a\u0000a', 'b\u0000b'])).toEqual({
+      score: 100,
+      correct: true,
+      feedback: [],
+    })
+    expect(gradeQuestion(question, ['a\u0000b', 'b\u0000b'])).toMatchObject({
+      score: 50,
+      correct: false,
+    })
+  })
   it('does not shuffle fixed or special trailing choices', () => {
     const payload: MultipleChoiceQuestion = {
       ...base,
@@ -80,5 +108,45 @@ describe('grading', () => {
           .payload as MultipleChoiceQuestion
       ).choices,
     ).toEqual(payload.choices)
+  })
+  it('shuffles matching prompts and options independently', () => {
+    const payload: MatchingQuestion = {
+      ...base,
+      kind: 'matching',
+      pairs: [
+        {
+          id: 'a',
+          left: { format: 'plain', value: 'A' },
+          right: { format: 'plain', value: '1' },
+        },
+        {
+          id: 'b',
+          left: { format: 'plain', value: 'B' },
+          right: { format: 'plain', value: '2' },
+        },
+        {
+          id: 'c',
+          left: { format: 'plain', value: 'C' },
+          right: { format: 'plain', value: '3' },
+        },
+      ],
+    }
+    const record = {
+      id: 'q',
+      deckId: 'd',
+      sourceKey: 'q',
+      sourceOrder: 0,
+      kind: payload.kind,
+      payload,
+      enabled: true,
+      enabledKey: 1,
+      createdAt: '',
+      updatedAt: '',
+    } satisfies QuestionRecord
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const prepared = prepareQuestion(record, true).payload as MatchingQuestion
+    expect(prepared.pairs.map((pair) => pair.id)).toEqual(['b', 'c', 'a'])
+    expect(prepared.matchingOptionOrder).toEqual(['c', 'a', 'b'])
+    vi.restoreAllMocks()
   })
 })

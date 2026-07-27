@@ -78,6 +78,10 @@ function answerSignature(question: QuestionRecord['payload']): string {
     return JSON.stringify(question.answers.map((answer) => [answer.value, answer.weight]))
   }
   if (question.kind === 'numerical') return JSON.stringify(question.answers)
+  if (question.kind === 'matching') {
+    return JSON.stringify(question.pairs.map((pair) => [pair.left.value, pair.right.value]))
+  }
+  if (question.kind === 'essay' || question.kind === 'description') return question.kind
   return question.sourceKind
 }
 

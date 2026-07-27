@@ -69,8 +69,26 @@ export interface NumericalQuestion extends QuizQuestionBase {
   kind: 'numerical'
   answers: NumericalAnswer[]
 }
+export interface MatchingPair {
+  id: string
+  left: QuizContent
+  right: QuizContent
+}
+export interface MatchingQuestion extends QuizQuestionBase {
+  kind: 'matching'
+  pairs: MatchingPair[]
+  /** Transient option order prepared for a study session. */
+  matchingOptionOrder?: string[]
+}
+export interface EssayQuestion extends QuizQuestionBase {
+  kind: 'essay'
+}
+export interface DescriptionQuestion extends QuizQuestionBase {
+  kind: 'description'
+}
 export interface UnsupportedQuestion extends QuizQuestionBase {
   kind: 'unsupported'
+  /** Kept so version 1 backups made by older releases remain readable. */
   sourceKind: 'matching' | 'essay' | 'description'
 }
 export type QuizQuestion =
@@ -79,6 +97,9 @@ export type QuizQuestion =
   | TrueFalseQuestion
   | ShortAnswerQuestion
   | NumericalQuestion
+  | MatchingQuestion
+  | EssayQuestion
+  | DescriptionQuestion
   | UnsupportedQuestion
 export interface GradeResult {
   score: number

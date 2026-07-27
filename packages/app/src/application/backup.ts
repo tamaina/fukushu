@@ -72,6 +72,11 @@ const NumericalAnswerSchema = v.variant('type', [
     feedback: v.optional(ContentSchema),
   }),
 ])
+const MatchingPairSchema = v.strictObject({
+  id: v.string(),
+  left: ContentSchema,
+  right: ContentSchema,
+})
 const QuizQuestionSchema = v.variant('kind', [
   v.strictObject({
     ...commonQuestion,
@@ -99,6 +104,19 @@ const QuizQuestionSchema = v.variant('kind', [
     ...commonQuestion,
     kind: v.literal('numerical'),
     answers: v.array(NumericalAnswerSchema),
+  }),
+  v.strictObject({
+    ...commonQuestion,
+    kind: v.literal('matching'),
+    pairs: v.array(MatchingPairSchema),
+  }),
+  v.strictObject({
+    ...commonQuestion,
+    kind: v.literal('essay'),
+  }),
+  v.strictObject({
+    ...commonQuestion,
+    kind: v.literal('description'),
   }),
   v.strictObject({
     ...commonQuestion,
@@ -164,6 +182,9 @@ const QuestionSchema = v.strictObject({
     'true-false',
     'short-answer',
     'numerical',
+    'matching',
+    'essay',
+    'description',
     'unsupported',
   ]),
   payload: QuizQuestionSchema,

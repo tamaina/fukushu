@@ -5,6 +5,11 @@ import { vueInternationalization } from 'vite-vue-internationalization'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
 export default defineConfig(({ mode }) => ({
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+  },
   plugins: [
     ...(mode === 'e2e' ? [] : cloudflare()),
     vueInternationalization(),

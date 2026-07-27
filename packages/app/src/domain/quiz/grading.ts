@@ -60,5 +60,10 @@ export function gradeQuestion(question: QuizQuestion, answer: string[]): GradeRe
     )
     return result(found?.weight ?? 0, found?.feedback ? [found.feedback] : [])
   }
+  if (question.kind === 'matching') {
+    const selections = new Map(answer.map((entry) => entry.split('\u0000', 2) as [string, string]))
+    const correct = question.pairs.filter((pair) => selections.get(pair.id) === pair.id).length
+    return result((correct / question.pairs.length) * 100, [], correct === question.pairs.length)
+  }
   return result(0, [])
 }

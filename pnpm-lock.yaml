@@ -40,6 +40,9 @@ importers:
       idb:
         specifier: ^8.0.0
         version: 8.0.3
+      katex:
+        specifier: ^0.18.1
+        version: 0.18.1
       marked:
         specifier: ^15.0.0
         version: 15.0.12
@@ -68,6 +71,9 @@ importers:
       '@playwright/test':
         specifier: ^1.50.0
         version: 1.61.1
+      '@types/katex':
+        specifier: ^0.16.8
+        version: 0.16.8
       '@vitejs/plugin-vue':
         specifier: ^6.0.0
         version: 6.0.8(vite@8.1.5(esbuild@0.28.1)(terser@5.49.0)(yaml@2.9.0))(vue@3.5.40(typescript@5.9.3))
@@ -2379,6 +2385,12 @@ packages:
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
       }
 
+  '@types/katex@0.16.8':
+    resolution:
+      {
+        integrity: sha512-trgaNyfU+Xh2Tc+ABIb44a5AYUpicB3uwirOioeOkNPPbmgRNtcWyDeeFRzjPZENO9Vq8gvVqfhaaXWLlevVwg==,
+      }
+
   '@types/resolve@1.20.2':
     resolution:
       {
@@ -2930,6 +2942,13 @@ packages:
       {
         integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==,
       }
+
+  commander@8.3.0:
+    resolution:
+      {
+        integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==,
+      }
+    engines: { node: '>= 12' }
 
   common-tags@1.8.2:
     resolution:
@@ -4065,6 +4084,13 @@ packages:
         integrity: sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==,
       }
     engines: { node: '>=0.10.0' }
+
+  katex@0.18.1:
+    resolution:
+      {
+        integrity: sha512-Td8GCYSxDAoMhHOlKmCFMJ/hz5qlAAb71n66Dryw9nfCVfumLo7nhuotbvKom/XPADmrYC3O5QR71EPq4DarJQ==,
+      }
+    hasBin: true
 
   keyv@4.5.4:
     resolution:
@@ -7109,6 +7135,8 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/katex@0.16.8': {}
+
   '@types/resolve@1.20.2': {}
 
   '@types/trusted-types@2.0.7': {}
@@ -7497,6 +7525,8 @@ snapshots:
   commander@10.0.1: {}
 
   commander@2.20.3: {}
+
+  commander@8.3.0: {}
 
   common-tags@1.8.2: {}
 
@@ -8254,6 +8284,10 @@ snapshots:
       graceful-fs: 4.2.11
 
   jsonpointer@5.0.1: {}
+
+  katex@0.18.1:
+    dependencies:
+      commander: 8.3.0
 
   keyv@4.5.4:
     dependencies:

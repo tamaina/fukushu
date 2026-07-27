@@ -22,7 +22,30 @@ export interface StudyItem {
   deckName: DeckRecord['name']
   studyMode: DeckRecord['studyMode']
 }
+function shuffled<T>(values: readonly T[]): T[] {
+  const result = [...values]
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1))
+    ;[result[index], result[target]] = [result[target]!, result[index]!]
+  }
+  return result
+}
 export function prepareQuestion(question: QuestionRecord, shuffle: boolean): QuestionRecord {
+  if (
+    shuffle &&
+    question.payload.shuffleChoices !== false &&
+    question.payload.kind === 'matching'
+  ) {
+    const pairs = shuffled(question.payload.pairs)
+    return {
+      ...question,
+      payload: {
+        ...question.payload,
+        pairs,
+        matchingOptionOrder: shuffled(pairs.map((pair) => pair.id)),
+      },
+    }
+  }
   if (
     !shuffle ||
     question.payload.shuffleChoices === false ||
@@ -35,11 +58,7 @@ export function prepareQuestion(question: QuestionRecord, shuffle: boolean): Que
     ),
   )
   if (fixedChoice) return question
-  const choices = [...question.payload.choices]
-  for (let index = choices.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(Math.random() * (index + 1))
-    ;[choices[index], choices[target]] = [choices[target]!, choices[index]!]
-  }
+  const choices = shuffled(question.payload.choices)
   return { ...question, payload: { ...question.payload, choices } }
 }
 export async function buildStudyQueue(
@@ -116,7 +135,9 @@ export async function recordReview(
     correct,
     durationMs,
     fsrsLog: scheduled.log,
-    ...(item.question.kind === 'single-choice' || item.question.kind === 'multiple-choice'
+    ...(item.question.kind === 'single-choice' ||
+    item.question.kind === 'multiple-choice' ||
+    item.question.kind === 'matching'
       ? { selectedAnswerIds: answers }
       : { responseText: answers[0] ?? '' }),
   }
