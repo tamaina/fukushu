@@ -12,6 +12,7 @@ import {
 } from '../application/decks'
 import { deckRepository } from '../infrastructure/db/database'
 import { createId } from '../utils/id'
+import { requestPersistentStorage } from '../utils/persistentStorage'
 
 const router = useRouter()
 const route = useRoute()
@@ -31,8 +32,9 @@ const canSave = computed(
     preview.value.questions.length > 0 &&
     !preview.value.diagnostics.some((item) => item.severity === 'error'),
 )
-async function analyze(): Promise<void> {
+async function analyze(requestPersistence = true): Promise<void> {
   if (!source.value.trim()) return
+  if (requestPersistence) await requestPersistentStorage()
   busy.value = true
   message.value = ''
   try {
@@ -54,13 +56,15 @@ async function readFile(file?: File): Promise<void> {
     message.value = $locale.value.sfc.invalidFileType
     return
   }
+  const persistenceRequest = requestPersistentStorage()
   try {
     source.value = new TextDecoder('utf-8', { fatal: true })
       .decode(await file.arrayBuffer())
       .replace(/^\uFEFF/, '')
     fileName.value = file.name
     deckName.value ||= file.name.replace(/\.(gift|txt)$/i, '')
-    await analyze()
+    await persistenceRequest
+    await analyze(false)
   } catch {
     message.value = $locale.value.sfc.invalidEncoding
   }
@@ -140,7 +144,7 @@ onMounted(async () => {
       />
     </label>
     <div class="actions">
-      <button :disabled="busy || !source.trim()" @click="analyze">
+      <button :disabled="busy || !source.trim()" @click="analyze()">
         {{ busy ? $locale.sfc.analyzing : $locale.sfc.analyze }}
       </button>
     </div>
