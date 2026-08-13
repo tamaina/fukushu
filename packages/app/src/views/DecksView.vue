@@ -87,7 +87,7 @@ decks: 問題集
 decksIntro: 端末内に保存した問題集です。
 import: 読み込む
 noDecks: 問題集はまだありません
-noDecksBody: GIFTファイルを読み込むと、ここに表示されます。
+noDecksBody: GIFTまたはAnki形式のファイルを読み込むと、ここに表示されます。
 firstImport: 最初の問題集を読み込む
 enabled: 問が有効
 studied: 学習済み
@@ -103,7 +103,7 @@ decks: Decks
 decksIntro: Decks saved on this device.
 import: Import
 noDecks: No decks yet
-noDecksBody: Import a GIFT file to see it here.
+noDecksBody: Import a GIFT or Anki-format file to see it here.
 firstImport: Import your first deck
 enabled: enabled
 studied: studied

@@ -358,6 +358,16 @@ onMounted(async () => {
         </div>
         <h1 class="visually-hidden">{{ $locale.sfc.question }}</h1>
         <ContentRenderer :content="question.prompt" />
+        <label
+          v-if="
+            isFlashcard && question.kind === 'flashcard' && question.typeAnswer && !answerVisible
+          "
+          >{{ $locale.sfc.answer
+          }}<input
+            v-model="text"
+            autocomplete="off"
+            @keydown.enter.prevent="answerVisible = Boolean(text.trim())"
+        /></label>
         <template v-if="!isFlashcard">
           <fieldset
             v-if="question.kind === 'single-choice' || question.kind === 'multiple-choice'"
@@ -464,7 +474,7 @@ onMounted(async () => {
           <div v-else-if="question.kind === 'description'" class="message">
             {{ $locale.sfc.descriptionPrompt }}
           </div>
-          <div v-else class="message warning">
+          <div v-else-if="question.kind === 'unsupported'" class="message warning">
             {{ $l.sfc.unsupported({ kind: question.sourceKind }) }}
           </div>
           <div v-if="!graded" class="actions">
@@ -475,7 +485,12 @@ onMounted(async () => {
           </div>
         </template>
         <div v-else-if="!answerVisible" class="actions">
-          <button @click="answerVisible = true">{{ $locale.sfc.revealAnswer }}</button>
+          <button
+            :disabled="question.kind === 'flashcard' && question.typeAnswer && !text.trim()"
+            @click="answerVisible = true"
+          >
+            {{ $locale.sfc.revealAnswer }}
+          </button>
         </div>
         <section
           v-if="isFlashcard && answerVisible"
@@ -483,6 +498,7 @@ onMounted(async () => {
           aria-live="polite"
         >
           <h2>{{ $locale.sfc.correctAnswer }}</h2>
+          <ContentRenderer v-if="question.kind === 'flashcard'" :content="question.answer" />
           <div v-if="correctChoices.length" class="correct-answer-list">
             <div v-for="choice in correctChoices" :key="choice.id" class="message">
               <ContentRenderer :content="choice.content" />

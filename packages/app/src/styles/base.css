@@ -382,6 +382,22 @@ section + section {
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
+.anki-import-panel {
+  display: grid;
+  gap: var(--space-6);
+}
+.anki-import-panel > h2,
+.anki-import-panel > p,
+.anki-import-panel > .inline-list {
+  margin-bottom: 0;
+}
+.anki-import-panel > button {
+  justify-self: start;
+}
+.mapping-grid {
+  display: grid;
+  gap: var(--space-4);
+}
 .badge {
   display: inline-block;
   padding: 2px 7px;
@@ -592,6 +608,27 @@ section + section {
 .rich-content {
   white-space: pre-wrap;
 }
+.cloze-blank {
+  min-width: 3.8em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  margin: 0 0.1em;
+  padding: 0 0.55em;
+  vertical-align: baseline;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.cloze-label {
+  font-weight: 750;
+}
+.cloze-hint {
+  color: var(--color-muted);
+  font-size: 0.75em;
+}
 .question-card > .plain-content,
 .question-card > .rich-content {
   margin-bottom: var(--space-6);
@@ -755,6 +792,17 @@ section + section {
 }
 .result-question-title {
   overflow-wrap: anywhere;
+}
+.result-question-title > .plain-content,
+.result-question-title > .rich-content,
+.question-list-prompt {
+  font-weight: 700;
+}
+.result-question-title > .plain-content,
+.result-question-title > .rich-content,
+.question-list-prompt,
+.question-list-prompt > * {
+  margin: 0;
 }
 .result-row-incorrect {
   background: var(--color-danger-soft);

@@ -9,7 +9,7 @@ export interface QuizDeck {
   id: string
   name: string
   description?: string
-  sourceType: 'gift'
+  sourceType: 'gift' | 'anki-text'
   sourceFileName?: string
   importedAt: string
   updatedAt: string
@@ -86,6 +86,15 @@ export interface EssayQuestion extends QuizQuestionBase {
 export interface DescriptionQuestion extends QuizQuestionBase {
   kind: 'description'
 }
+export interface FlashcardQuestion extends QuizQuestionBase {
+  kind: 'flashcard'
+  answer: QuizContent
+  /** When true, the learner types the plain-text answer before revealing the card back. */
+  typeAnswer?: boolean
+  acceptedAnswer?: string
+  ankiNoteType?: string
+  ankiTags?: string[]
+}
 export interface UnsupportedQuestion extends QuizQuestionBase {
   kind: 'unsupported'
   /** Kept so version 1 backups made by older releases remain readable. */
@@ -100,6 +109,7 @@ export type QuizQuestion =
   | MatchingQuestion
   | EssayQuestion
   | DescriptionQuestion
+  | FlashcardQuestion
   | UnsupportedQuestion
 export interface GradeResult {
   score: number

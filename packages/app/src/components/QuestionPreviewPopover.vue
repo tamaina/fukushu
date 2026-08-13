@@ -52,13 +52,14 @@ function closePreview(): void {
     :id="popoverId"
     ref="previewDialog"
     class="question-preview-popover"
-    :aria-labelledby="`${popoverId}-title`"
+    :aria-labelledby="question.name ? `${popoverId}-title` : undefined"
+    :aria-label="question.name ? undefined : $locale.sfc.previewTitle"
     @click.self.stop="closePreview"
   >
     <div class="question-preview-heading">
       <div>
         <span class="badge">{{ question.kind }}</span>
-        <h2 :id="`${popoverId}-title`">{{ question.name || $locale.sfc.untitled }}</h2>
+        <h2 v-if="question.name" :id="`${popoverId}-title`">{{ question.name }}</h2>
       </div>
       <button class="icon-button secondary" :aria-label="$locale.sfc.close" @click="closePreview">
         <X aria-hidden="true" />
@@ -131,6 +132,9 @@ function closePreview(): void {
       </div>
     </div>
     <p v-else-if="question.kind === 'essay'" class="muted">{{ $locale.sfc.essay }}</p>
+    <div v-else-if="question.kind === 'flashcard'" class="message">
+      <ContentRenderer :content="question.answer" />
+    </div>
     <p v-else-if="question.kind === 'description'" class="muted">
       {{ $locale.sfc.description }}
     </p>
@@ -146,7 +150,7 @@ function closePreview(): void {
 <locale locale="ja-JP" lang="yaml">
 preview: プレビュー
 previewQuestion: '「{name}」をプレビュー'
-untitled: 無題の問題
+previewTitle: 問題プレビュー
 close: 閉じる
 correctAnswer: 正答
 choices: 選択肢
@@ -161,7 +165,7 @@ explanation: 解説
 <locale locale="en-US" lang="yaml">
 preview: Preview
 previewQuestion: 'Preview "{name}"'
-untitled: Untitled question
+previewTitle: Question preview
 close: Close
 correctAnswer: Correct answer
 choices: Choices

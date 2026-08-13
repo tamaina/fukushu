@@ -17,9 +17,19 @@ const html = computed(() => {
   if (rich === undefined) element.textContent = props.content.value
   else
     element.innerHTML = DOMPurify.sanitize(rich, {
-      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'svg', 'img'],
+      ADD_TAGS: ['audio'],
+      ADD_ATTR: ['controls', 'preload'],
+      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'svg'],
       FORBID_ATTR: ['style'],
     })
+  for (const media of element.querySelectorAll('img, audio')) {
+    if (!(media.getAttribute('src') ?? '').startsWith('data:')) {
+      const replacement = document.createElement('span')
+      replacement.className = 'missing-media'
+      replacement.textContent = media.getAttribute('src') || '[missing media]'
+      media.replaceWith(replacement)
+    }
+  }
   renderMathInElement(element, {
     delimiters: [
       { left: '\\[', right: '\\]', display: true },

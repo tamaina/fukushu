@@ -28,4 +28,19 @@ describe('ContentRenderer', () => {
     expect(wrapper.find('script').exists()).toBe(false)
     expect(wrapper.find('b .katex').exists()).toBe(true)
   })
+
+  it('renders embedded media without loading remote media', () => {
+    const wrapper = mount(ContentRenderer, {
+      props: {
+        content: {
+          format: 'html',
+          value:
+            '<img src="https://example.com/tracker.png"><img src="data:image/png;base64,iVBORw0KGgo=">',
+        },
+      },
+    })
+    expect(wrapper.find('img[src^="https:"]').exists()).toBe(false)
+    expect(wrapper.find('.missing-media').text()).toContain('tracker.png')
+    expect(wrapper.find('img[src^="data:image/png"]').exists()).toBe(true)
+  })
 })

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Download, Flame, Play, RotateCcw, Trash2 } from '@lucide/vue'
 import QuestionPreviewPopover from '../components/QuestionPreviewPopover.vue'
+import ContentRenderer from '../components/ContentRenderer.vue'
 import { deckRepository, questionRepository, reviewRepository } from '../infrastructure/db/database'
 import { resetDeckHistory, setDeckStudyMode, setQuestionEnabled } from '../application/decks'
 import type { DeckRecord, QuestionRecord, ReviewLogRecord } from '../infrastructure/db/schema'
@@ -184,10 +185,10 @@ onMounted(load)
         </div>
         <div class="actions deck-file-actions">
           <button v-if="deck.sourceText" class="secondary" @click="exportGift">
-            <Download aria-hidden="true" />{{ $locale.sfc.saveGift }}
+            <Download aria-hidden="true" />{{ $locale.sfc.saveSource }}
           </button>
           <RouterLink class="button secondary" :to="`/import?deck=${deck.id}`">{{
-            $locale.sfc.updateGift
+            $locale.sfc.updateSource
           }}</RouterLink>
           <button class="secondary" @click="resetDialog?.showModal()">
             <RotateCcw aria-hidden="true" />{{ $locale.sfc.resetButton }}
@@ -238,9 +239,12 @@ onMounted(load)
       <ul class="question-list">
         <li v-for="question in visible" :key="question.id">
           <div>
-            <strong>{{
-              question.payload.name || question.payload.prompt.value.slice(0, 80)
-            }}</strong>
+            <strong v-if="question.payload.name">{{ question.payload.name }}</strong>
+            <ContentRenderer
+              v-else
+              class="question-list-prompt"
+              :content="question.payload.prompt"
+            />
             <div class="question-meta">
               <small>{{
                 question.payload.categoryPath.join(' / ') || $locale.sfc.uncategorized
@@ -344,8 +348,8 @@ deckSummary: '{total}問・{enabled}問が有効'
 deckRatingSummary: 'Ratingの割合: もう一度 {again}、難しかった {hard}、正解 {good}、簡単 {easy}、未出題 {unseen}'
 studyDeck: この問題集を学習
 cramAll: 全問を詰め込み学習
-saveGift: GIFTを保存
-updateGift: GIFTで更新
+saveSource: 元ファイルを保存
+updateSource: ファイルから更新
 studyMode: 学習モード
 studyModeIntro: この問題集を学習するときの回答方法を選びます。
 quiz: クイズ
@@ -383,8 +387,8 @@ deckSummary: '{total} questions · {enabled} enabled'
 deckRatingSummary: 'Rating distribution: Again {again}, Hard {hard}, Good {good}, Easy {easy}, Unseen {unseen}'
 studyDeck: Study this deck
 cramAll: Cram all questions
-saveGift: Save GIFT
-updateGift: Update from GIFT
+saveSource: Save source file
+updateSource: Update from file
 studyMode: Study mode
 studyModeIntro: Choose how to answer questions in this deck.
 quiz: Quiz

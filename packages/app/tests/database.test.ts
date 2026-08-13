@@ -83,6 +83,7 @@ describe('IndexedDB repositories', () => {
         'reviewLogs',
         'settings',
         'imports',
+        'importSources',
       ]),
     )
     const preview = await previewGift('Q {=yes ~no}', createId())

@@ -1,0 +1,8 @@
+#separator:Comma
+#html:true
+#columns:Front,Back,Extra,Tags
+#tags column:4
+"カンマを含む問題, そのまま表示されます","カンマを含む解答, CSVの引用符で保持","<i>CSV形式の例</i>","csv sample"
+"複数行の問題","1行目
+2行目","引用符で囲むと改行もフィールド内に保持されます","csv multiline"
+"HTMLの例","<strong>太字</strong>と \(x^2\)","HTMLとLaTeXを同時に表示","csv html"

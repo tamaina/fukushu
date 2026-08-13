@@ -77,10 +77,10 @@ available: '{count}問を学習できます'
 nothingToday: 今日の予定はありません
 schedule: '復習 {due}問・新規 {fresh}問'
 startStudy: 学習を始める
-importGift: GIFTを読み込む
+importGift: 問題集を読み込む
 decks: 問題集
 viewAll: すべて見る
-importEmptyTitle: GIFT問題集を読み込みましょう
+importEmptyTitle: 問題集を読み込みましょう
 importEmptyMessage: 問題集と学習履歴は、このブラウザのIndexedDBへ保存されます。
 questionsCount: '{count}問'
 lastSevenDays: 最近7日間
@@ -92,10 +92,10 @@ available: '{count, plural, one {# question available} other {# questions availa
 nothingToday: Nothing scheduled today
 schedule: '{due, plural, one {# review} other {# reviews}} · {fresh, plural, one {# new question} other {# new questions}}'
 startStudy: Start studying
-importGift: Import GIFT
+importGift: Import deck
 decks: Decks
 viewAll: View all
-importEmptyTitle: Import a GIFT deck
+importEmptyTitle: Import a deck
 importEmptyMessage: Decks and study history are stored in this browser's IndexedDB.
 questionsCount: '{count, plural, one {# question} other {# questions}}'
 lastSevenDays: Last 7 days

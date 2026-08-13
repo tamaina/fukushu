@@ -52,7 +52,7 @@ import { ExternalLink } from '@lucide/vue'
 </template>
 <locale locale="ja-JP" lang="yaml">
 aboutTitle: Fukushuについて
-aboutIntro: Fukushuは、GIFT形式の問題集を読み込み、FSRSによって復習時期を決める学習用SPAです。問題を生成する機能はありません。
+aboutIntro: Fukushuは、GIFTまたはAnki互換CSV／TSV形式の問題集を読み込み、FSRSによって復習時期を決める学習用SPAです。問題を生成する機能はありません。
 privacy: プライバシー
 privacyBody: 問題集と学習履歴はIndexedDBを使ってこの端末内だけに保存され、サーバーへアップロードされません。ブラウザデータを削除すると失われる可能性があるため、設定画面から定期的にJSONバックアップを保存してください。
 giftFsrs: GIFTとFSRS
@@ -67,7 +67,7 @@ supportMe: 支援する
 </locale>
 <locale locale="en-US" lang="yaml">
 aboutTitle: About Fukushu
-aboutIntro: Fukushu imports GIFT decks and schedules reviews with FSRS. It does not generate questions.
+aboutIntro: Fukushu imports GIFT and Anki-compatible CSV/TSV decks and schedules reviews with FSRS. It does not generate questions.
 privacy: Privacy
 privacyBody: Decks and study history stay on this device in IndexedDB and are never uploaded. Browser data can be lost, so regularly save a JSON backup from Settings.
 giftFsrs: GIFT and FSRS

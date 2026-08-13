@@ -1,0 +1,11 @@
+#separator:Tab
+#html:true
+#columns:Front	Back	Extra	Note Type	Deck	Tags	GUID
+#notetype column:4
+#deck column:5
+#tags column:6
+#guid column:7
+東京	日本の首都	<b>関東地方</b>	Basic	一般教養::地理	日本 地理	sample-basic-1
+富士山	日本で最も高い山	標高3,776m	Basic (and reversed card)	一般教養::地理	日本 地理	sample-reverse-1
+水	H2O	化学式を入力します	Basic (type in the answer)	一般教養::科学	化学	sample-type-1
+{{c1::地球}}は{{c2::太陽}}の周りを公転する	天文学の基本	c1とc2から2枚生成されます	Cloze	一般教養::科学	天文	sample-cloze-1

@@ -6,6 +6,7 @@ import type {
   ReviewLogRecord,
   SettingsRecord,
   StudyStateRecord,
+  ImportSourceRecord,
 } from '../infrastructure/db/schema'
 
 export interface AppBackup {
@@ -18,6 +19,7 @@ export interface AppBackup {
   questions: QuestionRecord[]
   studyStates: StudyStateRecord[]
   reviewLogs: ReviewLogRecord[]
+  importSources?: ImportSourceRecord[]
 }
 
 const iso = () => v.pipe(v.string(), v.isoTimestamp())
@@ -120,6 +122,15 @@ const QuizQuestionSchema = v.variant('kind', [
   }),
   v.strictObject({
     ...commonQuestion,
+    kind: v.literal('flashcard'),
+    answer: ContentSchema,
+    typeAnswer: v.optional(v.boolean()),
+    acceptedAnswer: v.optional(v.string()),
+    ankiNoteType: v.optional(v.string()),
+    ankiTags: v.optional(v.array(v.string())),
+  }),
+  v.strictObject({
+    ...commonQuestion,
     kind: v.literal('unsupported'),
     sourceKind: v.picklist(['matching', 'essay', 'description']),
   }),
@@ -162,10 +173,12 @@ const DeckSchema = v.strictObject({
   name: v.string(),
   description: v.optional(v.string()),
   studyMode: v.optional(v.picklist(['flashcard', 'quiz']), 'quiz'),
-  sourceType: v.literal('gift'),
+  sourceType: v.picklist(['gift', 'anki-text']),
   sourceFileName: v.optional(v.string()),
   sourceHash: v.string(),
   sourceText: v.optional(v.string()),
+  sourceId: v.optional(v.string()),
+  sourceDeckKey: v.optional(v.string()),
   importedAt: iso(),
   updatedAt: iso(),
   questionCount: integer(),
@@ -185,6 +198,7 @@ const QuestionSchema = v.strictObject({
     'matching',
     'essay',
     'description',
+    'flashcard',
     'unsupported',
   ]),
   payload: QuizQuestionSchema,
@@ -224,6 +238,19 @@ const BackupSchema = v.strictObject({
   questions: v.array(QuestionSchema),
   studyStates: v.array(StudyStateSchema),
   reviewLogs: v.array(ReviewLogSchema),
+  importSources: v.optional(
+    v.array(
+      v.strictObject({
+        id: v.string(),
+        sourceType: v.picklist(['gift', 'anki-text']),
+        sourceFileName: v.optional(v.string()),
+        sourceHash: v.string(),
+        sourceText: v.string(),
+        importedAt: iso(),
+        updatedAt: iso(),
+      }),
+    ),
+  ),
 })
 
 function validateRelations(backup: AppBackup): void {
@@ -293,6 +320,7 @@ export async function createBackup(): Promise<AppBackup> {
     questions: await db.getAll('questions'),
     studyStates: await db.getAll('studyStates'),
     reviewLogs: await db.getAll('reviewLogs'),
+    importSources: await db.getAll('importSources'),
   }
 }
 
@@ -302,10 +330,26 @@ export async function restoreBackup(value: unknown): Promise<void> {
     ...validated,
     questions: restoreQuestionOrder(validated.questions),
   }
+  const restoredSources =
+    parsed.importSources ??
+    parsed.decks.map((deck) => ({
+      id: deck.sourceId ?? deck.id,
+      sourceType: deck.sourceType,
+      ...(deck.sourceFileName ? { sourceFileName: deck.sourceFileName } : {}),
+      sourceHash: deck.sourceHash,
+      sourceText: deck.sourceText ?? '',
+      importedAt: deck.importedAt,
+      updatedAt: deck.updatedAt,
+    }))
+  parsed.decks = parsed.decks.map((deck) => ({
+    ...deck,
+    sourceId: deck.sourceId ?? deck.id,
+    sourceDeckKey: deck.sourceDeckKey ?? deck.name.normalize('NFKC').trim(),
+  }))
   validateRelations(parsed)
   const db = await database()
   const tx = db.transaction(
-    ['decks', 'questions', 'studyStates', 'reviewLogs', 'settings', 'imports'],
+    ['decks', 'questions', 'studyStates', 'reviewLogs', 'settings', 'imports', 'importSources'],
     'readwrite',
   )
   await Promise.all([
@@ -315,9 +359,11 @@ export async function restoreBackup(value: unknown): Promise<void> {
     tx.objectStore('reviewLogs').clear(),
     tx.objectStore('settings').clear(),
     tx.objectStore('imports').clear(),
+    tx.objectStore('importSources').clear(),
   ])
   await tx.objectStore('settings').put(parsed.settings)
   await Promise.all(parsed.decks.map((item) => tx.objectStore('decks').put(item)))
+  await Promise.all(restoredSources.map((item) => tx.objectStore('importSources').put(item)))
   await Promise.all(parsed.questions.map((item) => tx.objectStore('questions').put(item)))
   await Promise.all(parsed.studyStates.map((item) => tx.objectStore('studyStates').put(item)))
   await Promise.all(parsed.reviewLogs.map((item) => tx.objectStore('reviewLogs').put(item)))

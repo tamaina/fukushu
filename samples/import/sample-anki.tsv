@@ -1,0 +1,8 @@
+#separator:Tab
+#html:true
+#columns:問題	解答	解説	ノートタイプ	デッキ
+#notetype column:4
+#deck column:5
+りんご	apple	日英のBasicカード	Basic	英単語
+猫	cat	順方向と逆方向を生成	Basic (and reversed card)	英単語
+{{c1::鎌倉幕府}}は{{c2::1192年}}に成立した	歴史上の出来事	異なるCloze番号ごとにカードを生成	Cloze	日本史

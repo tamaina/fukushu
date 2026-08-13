@@ -1,4 +1,50 @@
 import { expect, test } from '@playwright/test'
+
+test('imports Anki TSV with reversed and Cloze cards', async ({ page }) => {
+  await page.goto('/import')
+  await page.getByLabel('形式').selectOption('anki-text')
+  await page.getByLabel('問題集名').fill('Ankiテスト')
+  await page
+    .getByRole('textbox', { name: 'Anki CSV / TSV' })
+    .fill(
+      '#separator:Tab\n#notetype column:3\n東京\t日本の首都\tBasic (and reversed card)\n{{c1::富士山}}は日本一高い山\t補足\tCloze',
+    )
+  await page.getByRole('button', { name: '解析する' }).click()
+  await expect(page.getByText('3枚')).toBeVisible()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(page.getByRole('heading', { name: 'Ankiテスト' })).toBeVisible()
+  await page.getByRole('link', { name: 'この問題集を学習' }).click()
+  await expect(page.getByRole('button', { name: '答えを見る' })).toBeVisible()
+  await page.getByRole('button', { name: '答えを見る' }).click()
+  await expect(page.locator('.flashcard-answer .rich-content').first()).toBeVisible()
+})
+
+test('updating one deck from a multi-deck Anki file does not duplicate sibling decks', async ({
+  page,
+}) => {
+  const source = '#separator:Tab\n#deck column:3\nりんご\tapple\t英単語\n鎌倉幕府\t1192年\t日本史'
+  await page.goto('/import')
+  await page.getByLabel('形式').selectOption('anki-text')
+  await page.getByRole('textbox', { name: 'Anki CSV / TSV' }).fill(source)
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(page.getByRole('link', { name: /英単語/ })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: /日本史/ })).toHaveCount(1)
+
+  await page.getByRole('link', { name: /英単語/ }).click()
+  await page.getByRole('link', { name: 'ファイルから更新' }).click()
+  await page
+    .getByRole('textbox', { name: 'Anki CSV / TSV' })
+    .fill(source.replace('1192年', '1185年'))
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集を更新' }).click()
+  await page.getByRole('link', { name: '問題集' }).click()
+  await expect(page.getByRole('link', { name: /英単語/ })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: /日本史/ })).toHaveCount(1)
+  await page.getByRole('link', { name: /日本史/ }).click()
+  await page.getByRole('button', { name: /プレビュー/ }).click()
+  await expect(page.getByText('1185年', { exact: true })).toBeVisible()
+})
 test('imports a GIFT deck and starts study', async ({ page }) => {
   await page.goto('/import')
   await page.getByLabel('問題集名').fill('基本問題')
@@ -295,7 +341,7 @@ test('translates import, deck detail, and study pages into English', async ({ pa
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
 
   await page.goto('/import')
-  await expect(page.getByRole('heading', { name: 'Import GIFT' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Import deck' })).toBeVisible()
   await page.getByLabel('Deck name').fill('English deck')
   await page.getByLabel('GIFT text').fill('Capital of Japan? {=Tokyo ~Osaka}')
   await page.getByRole('button', { name: 'Analyze' }).click()

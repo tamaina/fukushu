@@ -3,6 +3,7 @@ import type {
   DeckRecord,
   FukushuDb,
   ImportRecord,
+  ImportSourceRecord,
   QuestionRecord,
   ReviewLogRecord,
   SettingsRecord,
@@ -15,10 +16,12 @@ let current: Promise<IDBPDatabase<FukushuDb>> | undefined
 // Vue may pass reactive proxies through application services; IndexedDB cannot clone proxies.
 const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<FukushuDb>> {
-  return openDB<FukushuDb>(name, 4, {
+  return openDB<FukushuDb>(name, 5, {
     upgrade(db, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
-        db.createObjectStore('decks', { keyPath: 'id' })
+        const decks = db.createObjectStore('decks', { keyPath: 'id' })
+        decks.createIndex('by-source', 'sourceId')
+        db.createObjectStore('importSources', { keyPath: 'id' })
         const questions = db.createObjectStore('questions', { keyPath: 'id' })
         questions.createIndex('by-deck', 'deckId')
         questions.createIndex('by-deck-order', ['deckId', 'sourceOrder'])
@@ -73,6 +76,35 @@ export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<Fukush
           await cursor.continue().then(migrateQuestion)
         })
       }
+      if (oldVersion > 0 && oldVersion < 5) {
+        db.createObjectStore('importSources', { keyPath: 'id' })
+        const decks = transaction.objectStore('decks')
+        decks.createIndex('by-source', 'sourceId')
+        const sources = transaction.objectStore('importSources')
+        void decks.openCursor().then(async function migrateSource(cursor): Promise<void> {
+          if (!cursor) return
+          const value = cursor.value
+          const sourceId = globalThis.crypto.randomUUID()
+          await sources.put({
+            id: sourceId,
+            sourceType: value.sourceType ?? 'gift',
+            ...(value.sourceFileName ? { sourceFileName: value.sourceFileName } : {}),
+            sourceHash: value.sourceHash ?? '',
+            sourceText: value.sourceText ?? '',
+            importedAt: value.importedAt,
+            updatedAt: value.updatedAt,
+          })
+          await cursor.update({
+            ...value,
+            studyMode: value.studyMode ?? 'quiz',
+            sourceType: value.sourceType ?? 'gift',
+            sourceHash: value.sourceHash ?? '',
+            sourceId,
+            sourceDeckKey: value.name.normalize('NFKC').trim(),
+          })
+          await cursor.continue().then(migrateSource)
+        })
+      }
     },
   })
 }
@@ -83,6 +115,8 @@ export function database(): Promise<IDBPDatabase<FukushuDb>> {
 export const deckRepository = {
   all: async (): Promise<DeckRecord[]> => (await database()).getAll('decks'),
   get: async (id: string): Promise<DeckRecord | undefined> => (await database()).get('decks', id),
+  bySource: async (sourceId: string): Promise<DeckRecord[]> =>
+    (await database()).getAllFromIndex('decks', 'by-source', sourceId),
   put: async (value: DeckRecord): Promise<void> => {
     await (await database()).put('decks', plain(value))
   },
@@ -100,6 +134,29 @@ export const deckRepository = {
     await tx.objectStore('imports').put(plain(importRecord))
     await tx.done
   },
+  saveImports: async (
+    entries: Array<{
+      deck: DeckRecord
+      questions: QuestionRecord[]
+      states: StudyStateRecord[]
+      importRecord: ImportRecord
+    }>,
+    source?: ImportSourceRecord,
+  ): Promise<void> => {
+    const db = await database()
+    const tx = db.transaction(
+      ['decks', 'questions', 'studyStates', 'imports', 'importSources'],
+      'readwrite',
+    )
+    if (source) await tx.objectStore('importSources').put(plain(source))
+    for (const entry of entries) {
+      await tx.objectStore('decks').put(plain(entry.deck))
+      for (const question of entry.questions) await tx.objectStore('questions').put(plain(question))
+      for (const state of entry.states) await tx.objectStore('studyStates').put(plain(state))
+      await tx.objectStore('imports').put(plain(entry.importRecord))
+    }
+    await tx.done
+  },
   remove: async (id: string): Promise<void> => {
     const db = await database()
     const tx = db.transaction(
@@ -115,6 +172,13 @@ export const deckRepository = {
       await tx.objectStore('imports').delete(value)
     await tx.objectStore('decks').delete(id)
     await tx.done
+  },
+}
+export const importSourceRepository = {
+  get: async (id: string): Promise<ImportSourceRecord | undefined> =>
+    (await database()).get('importSources', id),
+  put: async (value: ImportSourceRecord): Promise<void> => {
+    await (await database()).put('importSources', plain(value))
   },
 }
 export const questionRepository = {

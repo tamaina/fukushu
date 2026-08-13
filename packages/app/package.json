@@ -16,6 +16,7 @@
     "@fukushu/gift-parser": "workspace:*",
     "@lucide/vue": "^1.25.0",
     "dompurify": "^3.2.0",
+    "fflate": "^0.8.2",
     "idb": "^8.0.0",
     "katex": "^0.18.1",
     "marked": "^15.0.0",

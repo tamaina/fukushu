@@ -1,0 +1,5 @@
+#separator:Tab
+#html:true
+#columns:Front	Back	Extra
+画像を確認してください	<img src="sample.png" alt="赤いサンプル画像">	ZIP内の画像をdata URLとして取り込みます。
+音声を再生してください	[sound:sample.wav]	ZIP内の音声を再生できます。

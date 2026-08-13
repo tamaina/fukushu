@@ -1,5 +1,5 @@
 # Storage schema
 
-IndexedDB `gift-fsrs-learning` schema version 3には `decks`、`questions`、`studyStates`、`reviewLogs`、`settings`、`imports` を置きます。`decks.studyMode` は問題集ごとの `flashcard` / `quiz` を保持し、既存データは `quiz` へ移行します。レビュー履歴は追記専用です。FSRSライブラリ型はadapterでISO文字列を用いる保存型へ変換します。
+IndexedDB `gift-fsrs-learning` schema version 5には `importSources`、`decks`、`questions`、`studyStates`、`reviewLogs`、`settings`、`imports` を置きます。`importSources` と `decks` は1対多で、複数deckを含むAnkiファイルを一括更新できます。`decks.studyMode` は問題集ごとの `flashcard` / `quiz` を保持し、既存データは問題集ごとのsourceを作成して移行します。レビュー履歴は追記専用です。FSRSライブラリ型はadapterでISO文字列を用いる保存型へ変換します。
 
 JSONバックアップversion 1は設定、問題集、問題、学習状態、レビュー履歴を含みます。復元時はValibotで外部入力を検証します。

@@ -1,6 +1,8 @@
 # Fukushu
 
-GIFT形式の問題集をブラウザへ読み込み、FSRSで復習時期を決定するローカルファースト学習SPAです。問題集・学習履歴はIndexedDBへ保存し、サーバーへ送信しません。
+GIFT形式またはAnki互換CSV／TSVの問題集をブラウザへ読み込み、FSRSで復習時期を決定するローカルファースト学習SPAです。問題集・学習履歴はIndexedDBへ保存し、サーバーへ送信しません。
+
+Ankiテキストでは `#separator`、`#html`、`#columns`、deck／notetype／tags／GUID列を解釈します。Basic、Basic (and reversed card)、Basic (optional reversed card)、Basic (type in the answer)、Clozeをカードへ展開し、列の割り当ては保存前に変更できます。CSV／TSVと参照画像・音声を1つのZIPにまとめたインポートにも対応します。
 
 ## 開発
 

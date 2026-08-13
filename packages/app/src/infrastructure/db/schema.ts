@@ -28,14 +28,25 @@ export interface DeckRecord {
   name: string
   description?: string
   studyMode: 'flashcard' | 'quiz'
-  sourceType: 'gift'
+  sourceType: 'gift' | 'anki-text'
   sourceFileName?: string
   sourceHash: string
   sourceText?: string
+  sourceId?: string
+  sourceDeckKey?: string
   importedAt: string
   updatedAt: string
   questionCount: number
   enabledQuestionCount: number
+}
+export interface ImportSourceRecord {
+  id: string
+  sourceType: 'gift' | 'anki-text'
+  sourceFileName?: string
+  sourceHash: string
+  sourceText: string
+  importedAt: string
+  updatedAt: string
 }
 export interface QuestionRecord {
   id: string
@@ -91,7 +102,8 @@ export interface ImportRecord {
   disabled: number
 }
 export interface FukushuDb extends DBSchema {
-  decks: { key: string; value: DeckRecord }
+  decks: { key: string; value: DeckRecord; indexes: { 'by-source': string } }
+  importSources: { key: string; value: ImportSourceRecord }
   questions: {
     key: string
     value: QuestionRecord

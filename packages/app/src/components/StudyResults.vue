@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Check, Copy, Share2, X } from '@lucide/vue'
 import QuestionPreviewPopover from './QuestionPreviewPopover.vue'
+import ContentRenderer from './ContentRenderer.vue'
 import type { AppRating } from '../infrastructure/fsrs/adapter'
 import type { QuestionRecord } from '../infrastructure/db/schema'
 
@@ -160,9 +161,10 @@ async function shareResult(): Promise<void> {
               :class="{ 'result-row-incorrect': !result.correct }"
             >
               <td class="result-question-title">
-                <strong>{{
-                  result.question.payload.name || result.question.payload.prompt.value.slice(0, 80)
+                <strong v-if="result.question.payload.name">{{
+                  result.question.payload.name
                 }}</strong>
+                <ContentRenderer v-else :content="result.question.payload.prompt" />
               </td>
               <td>
                 <span

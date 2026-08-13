@@ -1,8 +1,10 @@
 import type { ImportPreview } from './importGift'
+import type { AnkiImportPreview } from './importAnki'
 import { createId } from '../utils/id'
 import { emptyStoredCard } from '../infrastructure/fsrs/adapter'
 import {
   deckRepository,
+  importSourceRepository,
   questionRepository,
   reviewRepository,
   stateRepository,
@@ -12,6 +14,7 @@ import type {
   ImportRecord,
   QuestionRecord,
   StudyStateRecord,
+  ImportSourceRecord,
 } from '../infrastructure/db/schema'
 
 export async function saveNewDeck(
@@ -23,6 +26,16 @@ export async function saveNewDeck(
     throw new Error('GIFTにエラーがあるため保存できません。')
   const id = preview.questions[0]?.deckId ?? createId()
   const now = new Date().toISOString()
+  const sourceId = createId()
+  const source: ImportSourceRecord = {
+    id: sourceId,
+    sourceType: 'gift',
+    ...(fileName ? { sourceFileName: fileName } : {}),
+    sourceHash: preview.sourceHash,
+    sourceText: preview.source,
+    importedAt: now,
+    updatedAt: now,
+  }
   const deck: DeckRecord = {
     id,
     name: name.trim() || '名称未設定の問題集',
@@ -31,6 +44,8 @@ export async function saveNewDeck(
     ...(fileName ? { sourceFileName: fileName } : {}),
     sourceHash: preview.sourceHash,
     sourceText: preview.source,
+    sourceId,
+    sourceDeckKey: name.trim() || '名称未設定の問題集',
     importedAt: now,
     updatedAt: now,
     questionCount: preview.questions.length,
@@ -65,8 +80,124 @@ export async function saveNewDeck(
     changed: 0,
     disabled: 0,
   }
+  await importSourceRepository.put(source)
   await deckRepository.saveImport(deck, questions, states, importRecord)
   return id
+}
+
+export async function saveAnkiDecks(
+  preview: AnkiImportPreview,
+  fileName?: string,
+  existingSource?: ImportSourceRecord,
+): Promise<string[]> {
+  if (preview.diagnostics.some((item) => item.severity === 'error'))
+    throw new Error('Ankiテキストにエラーがあるため保存できません。')
+  const now = new Date().toISOString()
+  const sourceId = existingSource?.id ?? createId()
+  const source: ImportSourceRecord = {
+    id: sourceId,
+    sourceType: 'anki-text',
+    ...(fileName ? { sourceFileName: fileName } : {}),
+    sourceHash: preview.sourceHash,
+    sourceText: preview.source,
+    importedAt: existingSource?.importedAt ?? now,
+    updatedAt: now,
+  }
+  const entries = preview.decks.map(({ name, questions }) => {
+    const id = questions[0]?.deckId ?? createId()
+    const deck: DeckRecord = {
+      id,
+      name,
+      studyMode: 'flashcard',
+      sourceType: 'anki-text',
+      ...(fileName ? { sourceFileName: fileName } : {}),
+      sourceHash: preview.sourceHash,
+      sourceText: preview.source,
+      sourceId,
+      sourceDeckKey: name.normalize('NFKC').trim(),
+      importedAt: now,
+      updatedAt: now,
+      questionCount: questions.length,
+      enabledQuestionCount: questions.length,
+    }
+    const records: QuestionRecord[] = questions.map((payload, sourceOrder) => ({
+      id: payload.id,
+      deckId: id,
+      sourceKey: payload.sourceKey,
+      sourceOrder,
+      kind: payload.kind,
+      payload,
+      enabled: true,
+      enabledKey: 1,
+      createdAt: now,
+      updatedAt: now,
+    }))
+    return {
+      deck,
+      questions: records,
+      states: records.map((question) => ({
+        questionId: question.id,
+        deckId: id,
+        card: emptyStoredCard(new Date(now)),
+        suspended: false,
+        suspendedKey: 0 as const,
+        updatedAt: now,
+      })),
+      importRecord: {
+        id: createId(),
+        deckId: id,
+        importedAt: now,
+        sourceHash: preview.sourceHash,
+        added: records.length,
+        changed: 0,
+        disabled: 0,
+      },
+    }
+  })
+  await deckRepository.saveImports(entries, source)
+  return entries.map((entry) => entry.deck.id)
+}
+
+export async function updateAnkiSource(
+  sourceId: string,
+  preview: AnkiImportPreview,
+  fileName?: string,
+): Promise<string[]> {
+  const source = await importSourceRepository.get(sourceId)
+  if (!source) throw new Error('更新元ファイルが見つかりません。')
+  const siblings = await deckRepository.bySource(sourceId)
+  const byKey = new Map(siblings.map((deck) => [deck.sourceDeckKey ?? deck.name, deck]))
+  const updatedIds: string[] = []
+  const additions: AnkiImportPreview['decks'] = []
+  for (const incoming of preview.decks) {
+    const key = incoming.name.normalize('NFKC').trim()
+    const existing = byKey.get(key)
+    if (!existing) {
+      additions.push(incoming)
+      continue
+    }
+    await updateDeck(existing.id, {
+      source: preview.source,
+      sourceHash: preview.sourceHash,
+      diagnostics: preview.diagnostics,
+      questions: incoming.questions,
+      counts: { flashcard: incoming.questions.length },
+    })
+    updatedIds.push(existing.id)
+  }
+  const nextSource: ImportSourceRecord = {
+    ...source,
+    ...(fileName ? { sourceFileName: fileName } : {}),
+    sourceHash: preview.sourceHash,
+    sourceText: preview.source,
+    updatedAt: new Date().toISOString(),
+  }
+  if (additions.length) {
+    updatedIds.push(
+      ...(await saveAnkiDecks({ ...preview, decks: additions }, fileName, nextSource)),
+    )
+  } else await importSourceRepository.put(nextSource)
+  return updatedIds
 }
 
 function answerSignature(question: QuestionRecord['payload']): string {
@@ -82,6 +213,8 @@ function answerSignature(question: QuestionRecord['payload']): string {
     return JSON.stringify(question.pairs.map((pair) => [pair.left.value, pair.right.value]))
   }
   if (question.kind === 'essay' || question.kind === 'description') return question.kind
+  if (question.kind === 'flashcard')
+    return JSON.stringify([question.answer, question.typeAnswer, question.acceptedAnswer])
   return question.sourceKind
 }
 
