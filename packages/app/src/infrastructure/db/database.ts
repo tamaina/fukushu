@@ -4,6 +4,7 @@ import type {
   FukushuDb,
   ImportRecord,
   ImportSourceRecord,
+  MediaRecord,
   QuestionRecord,
   ReviewLogRecord,
   SettingsRecord,
@@ -14,9 +15,16 @@ import { defaultSettings } from './schema'
 const DB_NAME = 'gift-fsrs-learning'
 let current: Promise<IDBPDatabase<FukushuDb>> | undefined
 // Vue may pass reactive proxies through application services; IndexedDB cannot clone proxies.
-const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+const plain = <T>(value: T): T => {
+  if (value instanceof Blob || value instanceof Uint8Array || value instanceof ArrayBuffer)
+    return value
+  if (Array.isArray(value)) return value.map((item) => plain(item)) as T
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, plain(item)])) as T
+  return value
+}
 export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<FukushuDb>> {
-  return openDB<FukushuDb>(name, 5, {
+  return openDB<FukushuDb>(name, 7, {
     upgrade(db, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const decks = db.createObjectStore('decks', { keyPath: 'id' })
@@ -105,6 +113,7 @@ export function openFukushuDatabase(name = DB_NAME): Promise<IDBPDatabase<Fukush
           await cursor.continue().then(migrateSource)
         })
       }
+      if (oldVersion < 6) db.createObjectStore('media', { keyPath: 'id' })
     },
   })
 }
@@ -180,6 +189,15 @@ export const importSourceRepository = {
   put: async (value: ImportSourceRecord): Promise<void> => {
     await (await database()).put('importSources', plain(value))
   },
+}
+export const mediaRepository = {
+  get: async (id: string): Promise<MediaRecord | undefined> => (await database()).get('media', id),
+  putMany: async (values: MediaRecord[]): Promise<void> => {
+    const tx = (await database()).transaction('media', 'readwrite')
+    for (const value of values) await tx.store.put(value)
+    await tx.done
+  },
+  all: async (): Promise<MediaRecord[]> => (await database()).getAll('media'),
 }
 export const questionRepository = {
   byDeck: async (deckId: string): Promise<QuestionRecord[]> => {

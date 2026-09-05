@@ -9,7 +9,9 @@ const stats = ref<Record<string, { studied: number; due: number; next?: string; 
   {},
 )
 async function load(): Promise<void> {
-  decks.value = await deckRepository.all()
+  decks.value = (await deckRepository.all()).filter(
+    (deck) => !(deck.sourceType === 'anki-package' && deck.questionCount === 0),
+  )
   const states = await stateRepository.all()
   const logs = await reviewRepository.all()
   const now = new Date()

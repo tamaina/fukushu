@@ -28,7 +28,7 @@ export interface DeckRecord {
   name: string
   description?: string
   studyMode: 'flashcard' | 'quiz'
-  sourceType: 'gift' | 'anki-text'
+  sourceType: 'gift' | 'anki-text' | 'anki-package'
   sourceFileName?: string
   sourceHash: string
   sourceText?: string
@@ -41,12 +41,23 @@ export interface DeckRecord {
 }
 export interface ImportSourceRecord {
   id: string
-  sourceType: 'gift' | 'anki-text'
+  sourceType: 'gift' | 'anki-text' | 'anki-package'
   sourceFileName?: string
   sourceHash: string
-  sourceText: string
+  sourceText?: string
+  sourceArchive?: Blob
+  packageFormat?: 'anki2' | 'anki21' | '21b'
+  importProgress?: boolean
+  revision?: number
+  needsReimport?: boolean
   importedAt: string
   updatedAt: string
+}
+export interface MediaRecord {
+  id: string
+  mimeType: string
+  blob: Blob
+  size: number
 }
 export interface QuestionRecord {
   id: string
@@ -66,6 +77,8 @@ export interface StudyStateRecord {
   card: StoredFsrsCard
   suspended: boolean
   suspendedKey: 0 | 1
+  sourceRemoved?: boolean
+  manualSuspended?: boolean
   buriedUntil?: string
   updatedAt: string
 }
@@ -80,6 +93,7 @@ export interface ReviewLogRecord {
   responseText?: string
   durationMs?: number
   fsrsLog: StoredFsrsReviewLog
+  origin?: { sourceId: string; cardId: string; revlogId: string }
 }
 export interface SettingsRecord {
   id: 'global'
@@ -104,6 +118,7 @@ export interface ImportRecord {
 export interface FukushuDb extends DBSchema {
   decks: { key: string; value: DeckRecord; indexes: { 'by-source': string } }
   importSources: { key: string; value: ImportSourceRecord }
+  media: { key: string; value: MediaRecord }
   questions: {
     key: string
     value: QuestionRecord

@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import { safeAnkiCss, safeAnkiHtml } from '@fukushu/anki-import/safety'
 import { database, settingsRepository } from '../infrastructure/db/database'
 import type {
   DeckRecord,
@@ -7,11 +8,19 @@ import type {
   SettingsRecord,
   StudyStateRecord,
   ImportSourceRecord,
+  MediaRecord,
 } from '../infrastructure/db/schema'
+
+interface BackupImportSource extends Omit<ImportSourceRecord, 'sourceArchive'> {
+  sourceArchiveBase64?: string
+}
+interface BackupMedia extends Omit<MediaRecord, 'blob'> {
+  blobBase64: string
+}
 
 export interface AppBackup {
   format: 'gift-fsrs-learning-backup'
-  version: 1
+  version: 1 | 2 | 3
   exportedAt: string
   appVersion: string
   settings: SettingsRecord
@@ -19,7 +28,8 @@ export interface AppBackup {
   questions: QuestionRecord[]
   studyStates: StudyStateRecord[]
   reviewLogs: ReviewLogRecord[]
-  importSources?: ImportSourceRecord[]
+  importSources?: BackupImportSource[]
+  media?: BackupMedia[]
 }
 
 const iso = () => v.pipe(v.string(), v.isoTimestamp())
@@ -128,6 +138,19 @@ const QuizQuestionSchema = v.variant('kind', [
     acceptedAnswer: v.optional(v.string()),
     ankiNoteType: v.optional(v.string()),
     ankiTags: v.optional(v.array(v.string())),
+    ankiCss: v.optional(v.string()),
+    ankiTemplateMode: v.optional(v.picklist(['native', 'isolated'])),
+    ankiSource: v.optional(
+      v.strictObject({
+        noteId: v.string(),
+        cardId: v.string(),
+        notetypeId: v.string(),
+        ordinal: integer(),
+        qfmt: v.string(),
+        afmt: v.string(),
+        css: v.string(),
+      }),
+    ),
   }),
   v.strictObject({
     ...commonQuestion,
@@ -173,7 +196,7 @@ const DeckSchema = v.strictObject({
   name: v.string(),
   description: v.optional(v.string()),
   studyMode: v.optional(v.picklist(['flashcard', 'quiz']), 'quiz'),
-  sourceType: v.picklist(['gift', 'anki-text']),
+  sourceType: v.picklist(['gift', 'anki-text', 'anki-package']),
   sourceFileName: v.optional(v.string()),
   sourceHash: v.string(),
   sourceText: v.optional(v.string()),
@@ -213,6 +236,8 @@ const StudyStateSchema = v.strictObject({
   card: CardSchema,
   suspended: v.boolean(),
   suspendedKey: v.union([v.literal(0), v.literal(1)]),
+  sourceRemoved: v.optional(v.boolean()),
+  manualSuspended: v.optional(v.boolean()),
   buriedUntil: v.optional(iso()),
   updatedAt: iso(),
 })
@@ -227,10 +252,13 @@ const ReviewLogSchema = v.strictObject({
   responseText: v.optional(v.string()),
   durationMs: v.optional(integer()),
   fsrsLog: FsrsLogSchema,
+  origin: v.optional(
+    v.strictObject({ sourceId: v.string(), cardId: v.string(), revlogId: v.string() }),
+  ),
 })
 const BackupSchema = v.strictObject({
   format: v.literal('gift-fsrs-learning-backup'),
-  version: v.literal(1),
+  version: v.union([v.literal(1), v.literal(2), v.literal(3)]),
   exportedAt: iso(),
   appVersion: v.string(),
   settings: SettingsSchema,
@@ -242,16 +270,44 @@ const BackupSchema = v.strictObject({
     v.array(
       v.strictObject({
         id: v.string(),
-        sourceType: v.picklist(['gift', 'anki-text']),
+        sourceType: v.picklist(['gift', 'anki-text', 'anki-package']),
         sourceFileName: v.optional(v.string()),
         sourceHash: v.string(),
-        sourceText: v.string(),
+        sourceText: v.optional(v.string()),
+        sourceArchiveBase64: v.optional(v.string()),
+        packageFormat: v.optional(v.picklist(['anki2', 'anki21', '21b'])),
+        importProgress: v.optional(v.boolean()),
+        revision: v.optional(integer()),
+        needsReimport: v.optional(v.boolean()),
         importedAt: iso(),
         updatedAt: iso(),
       }),
     ),
   ),
+  media: v.optional(
+    v.array(
+      v.strictObject({
+        id: v.string(),
+        mimeType: v.string(),
+        size: integer(),
+        blobBase64: v.string(),
+      }),
+    ),
+  ),
 })
+
+const blobToBase64 = async (blob: Blob): Promise<string> => {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let binary = ''
+  for (let offset = 0; offset < bytes.length; offset += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
+  return btoa(binary)
+}
+const base64ToBlob = (value: string, type = 'application/octet-stream'): Blob => {
+  const binary = atob(value)
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+  return new Blob([bytes], { type })
+}
 
 function validateRelations(backup: AppBackup): void {
   const deckIds = new Set(backup.decks.map((deck) => deck.id))
@@ -312,7 +368,7 @@ export async function createBackup(): Promise<AppBackup> {
   const db = await database()
   return {
     format: 'gift-fsrs-learning-backup',
-    version: 1,
+    version: 3,
     exportedAt: new Date().toISOString(),
     appVersion: '0.1.0',
     settings: await settingsRepository.get(),
@@ -320,7 +376,18 @@ export async function createBackup(): Promise<AppBackup> {
     questions: await db.getAll('questions'),
     studyStates: await db.getAll('studyStates'),
     reviewLogs: await db.getAll('reviewLogs'),
-    importSources: await db.getAll('importSources'),
+    importSources: await Promise.all(
+      (await db.getAll('importSources')).map(async ({ sourceArchive, ...source }) => ({
+        ...source,
+        ...(sourceArchive ? { sourceArchiveBase64: await blobToBase64(sourceArchive) } : {}),
+      })),
+    ),
+    media: await Promise.all(
+      (await db.getAll('media')).map(async ({ blob, ...item }) => ({
+        ...item,
+        blobBase64: await blobToBase64(blob),
+      })),
+    ),
   }
 }
 
@@ -330,7 +397,7 @@ export async function restoreBackup(value: unknown): Promise<void> {
     ...validated,
     questions: restoreQuestionOrder(validated.questions),
   }
-  const restoredSources =
+  const backupSources: BackupImportSource[] =
     parsed.importSources ??
     parsed.decks.map((deck) => ({
       id: deck.sourceId ?? deck.id,
@@ -341,15 +408,55 @@ export async function restoreBackup(value: unknown): Promise<void> {
       importedAt: deck.importedAt,
       updatedAt: deck.updatedAt,
     }))
+  const restoredSources: ImportSourceRecord[] = backupSources.map(
+    ({ sourceArchiveBase64, ...source }) => ({
+      ...source,
+      ...(sourceArchiveBase64
+        ? { sourceArchive: base64ToBlob(sourceArchiveBase64, 'application/zip') }
+        : {}),
+    }),
+  )
   parsed.decks = parsed.decks.map((deck) => ({
     ...deck,
     sourceId: deck.sourceId ?? deck.id,
     sourceDeckKey: deck.sourceDeckKey ?? deck.name.normalize('NFKC').trim(),
   }))
   validateRelations(parsed)
+  const mediaIds = new Set((parsed.media ?? []).map((m) => m.id))
+  const restoredMedia = await Promise.all(
+    (parsed.media ?? []).map(async ({ blobBase64, ...item }) => {
+      const blob = base64ToBlob(blobBase64, item.mimeType)
+      const hash = [
+        ...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())),
+      ]
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+      if (hash !== item.id || blob.size !== item.size)
+        throw new Error('Invalid backup media hash or size')
+      return { ...item, blob }
+    }),
+  )
+  for (const record of parsed.questions) {
+    const q = record.payload
+    if (q.kind !== 'flashcard' || !q.ankiTemplateMode) continue
+    if (q.prompt.format === 'html') q.prompt.value = safeAnkiHtml(q.prompt.value)
+    if (q.answer.format === 'html') q.answer.value = safeAnkiHtml(q.answer.value)
+    if (q.ankiCss !== undefined) q.ankiCss = safeAnkiCss(q.ankiCss)
+    for (const match of (q.prompt.value + q.answer.value).matchAll(/fukushu-media:([a-f0-9]{64})/g))
+      if (!mediaIds.has(match[1]!)) throw new Error('Missing backup media')
+  }
   const db = await database()
   const tx = db.transaction(
-    ['decks', 'questions', 'studyStates', 'reviewLogs', 'settings', 'imports', 'importSources'],
+    [
+      'decks',
+      'questions',
+      'studyStates',
+      'reviewLogs',
+      'settings',
+      'imports',
+      'importSources',
+      'media',
+    ],
     'readwrite',
   )
   await Promise.all([
@@ -360,6 +467,7 @@ export async function restoreBackup(value: unknown): Promise<void> {
     tx.objectStore('settings').clear(),
     tx.objectStore('imports').clear(),
     tx.objectStore('importSources').clear(),
+    tx.objectStore('media').clear(),
   ])
   await tx.objectStore('settings').put(parsed.settings)
   await Promise.all(parsed.decks.map((item) => tx.objectStore('decks').put(item)))
@@ -367,5 +475,7 @@ export async function restoreBackup(value: unknown): Promise<void> {
   await Promise.all(parsed.questions.map((item) => tx.objectStore('questions').put(item)))
   await Promise.all(parsed.studyStates.map((item) => tx.objectStore('studyStates').put(item)))
   await Promise.all(parsed.reviewLogs.map((item) => tx.objectStore('reviewLogs').put(item)))
+  await Promise.all(restoredMedia.map((item) => tx.objectStore('media').put(item)))
   await tx.done
+  if (parsed.version < 3) await (await import('./apkgStore')).repairLegacyApkg()
 }

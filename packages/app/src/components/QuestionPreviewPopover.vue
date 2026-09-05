@@ -66,7 +66,10 @@ function closePreview(): void {
       </button>
     </div>
 
-    <ContentRenderer :content="question.prompt" />
+    <ContentRenderer
+      :content="question.prompt"
+      :css="question.kind === 'flashcard' ? question.ankiCss : undefined"
+    />
 
     <fieldset
       v-if="question.kind === 'single-choice' || question.kind === 'multiple-choice'"
@@ -133,7 +136,7 @@ function closePreview(): void {
     </div>
     <p v-else-if="question.kind === 'essay'" class="muted">{{ $locale.sfc.essay }}</p>
     <div v-else-if="question.kind === 'flashcard'" class="message">
-      <ContentRenderer :content="question.answer" />
+      <ContentRenderer :content="question.answer" :css="question.ankiCss" />
     </div>
     <p v-else-if="question.kind === 'description'" class="muted">
       {{ $locale.sfc.description }}

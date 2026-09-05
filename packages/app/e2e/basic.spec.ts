@@ -1,4 +1,57 @@
 import { expect, test } from '@playwright/test'
+import { createRequire } from 'node:module'
+import initSqlJs from 'sql.js'
+import { strToU8, zipSync } from 'fflate'
+
+async function apkgFixture(): Promise<Buffer> {
+  const require = createRequire(import.meta.url)
+  const SQL = await initSqlJs({ locateFile: () => require.resolve('sql.js/dist/sql-wasm.wasm') })
+  const db = new SQL.Database()
+  db.run('create table col (models text, decks text, ver integer default 11)')
+  db.run('create table notes (id integer, guid text, mid integer, flds text, tags text)')
+  db.run('create table cards (id integer, nid integer, did integer, ord integer)')
+  db.run('create table revlog (id integer, cid integer, ease integer, type integer)')
+  const model = {
+    10: {
+      name: 'Basic',
+      flds: [{ name: 'Front' }, { name: 'Back' }],
+      tmpls: [{ ord: 0, qfmt: '{{Front}}', afmt: '{{FrontSide}}<hr>{{Back}}' }],
+      css: '.card { text-align: center }',
+    },
+  }
+  db.run('insert into col(models,decks) values (?, ?)', [
+    JSON.stringify(model),
+    JSON.stringify({ 20: { name: 'APKG英語' }, 21: { name: 'APKG日本史' } }),
+  ])
+  db.run('insert into notes values (1, ?, 10, ?, ?), (2, ?, 10, ?, ?)', [
+    'guid-a',
+    'apple\x1fりんご',
+    'word',
+    'guid-b',
+    '鎌倉幕府\x1f1192年',
+    'history',
+  ])
+  db.run('insert into cards values (101, 1, 20, 0), (102, 2, 21, 0)')
+  db.run('insert into revlog values (1700000000000, 101, 3, 1)')
+  const archive = zipSync({ 'collection.anki21': db.export(), media: strToU8('{}') })
+  db.close()
+  return Buffer.from(archive)
+}
+
+test('imports a multi-deck APKG and its review history', async ({ page }) => {
+  await page.goto('/import')
+  await page.locator('input[type=file][accept*="apkg"]').setInputFiles({
+    name: 'fixture.apkg',
+    mimeType: 'application/zip',
+    buffer: await apkgFixture(),
+  })
+  await expect(page.getByRole('heading', { name: 'APKGプレビュー' })).toBeVisible()
+  await expect(page.getByText('問題集 2', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Ankiの学習履歴を取り込む')).toBeChecked()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(page.getByRole('link', { name: /APKG英語/ })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: /APKG日本史/ })).toHaveCount(1)
+})
 
 test('imports Anki TSV with reversed and Cloze cards', async ({ page }) => {
   await page.goto('/import')
@@ -33,6 +86,7 @@ test('updating one deck from a multi-deck Anki file does not duplicate sibling d
 
   await page.getByRole('link', { name: /英単語/ }).click()
   await page.getByRole('link', { name: 'ファイルから更新' }).click()
+  await page.getByRole('button', { name: '入力・ファイルを変更' }).click()
   await page
     .getByRole('textbox', { name: 'Anki CSV / TSV' })
     .fill(source.replace('1192年', '1185年'))

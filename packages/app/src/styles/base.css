@@ -608,6 +608,24 @@ section + section {
 .rich-content {
   white-space: pre-wrap;
 }
+.markdown-content {
+  white-space: normal;
+  display: flow-root;
+}
+.markdown-content > p {
+  margin-block: 0.6em;
+}
+.markdown-content > hr {
+  margin-block: 0.6em;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
 .cloze-blank {
   min-width: 3.8em;
   display: inline-flex;

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Download, Flame, Play, RotateCcw, Trash2 } from '@lucide/vue'
 import QuestionPreviewPopover from '../components/QuestionPreviewPopover.vue'
 import ContentRenderer from '../components/ContentRenderer.vue'
+import { importSourceRepository } from '../infrastructure/db/database'
 import { deckRepository, questionRepository, reviewRepository } from '../infrastructure/db/database'
 import { resetDeckHistory, setDeckStudyMode, setQuestionEnabled } from '../application/decks'
 import type { DeckRecord, QuestionRecord, ReviewLogRecord } from '../infrastructure/db/schema'
@@ -16,6 +17,7 @@ const deckRatingCategories: DeckRatingCategory[] = ['again', 'hard', 'good', 'ea
 const route = useRoute()
 const router = useRouter()
 const deck = ref<DeckRecord>()
+const needsReimport = ref(false)
 const questions = ref<QuestionRecord[]>([])
 const answerCounts = ref<Record<string, number>>({})
 const ratingCounts = ref<Record<string, RatingCounts>>({})
@@ -73,6 +75,9 @@ function percentageLabel(value: number): string {
 }
 async function load(): Promise<void> {
   deck.value = await deckRepository.get(deckId)
+  needsReimport.value = deck.value?.sourceId
+    ? Boolean((await importSourceRepository.get(deck.value.sourceId))?.needsReimport)
+    : false
   questions.value = await questionRepository.byDeck(deckId)
   const logs = (await reviewRepository.all()).filter((log) => log.deckId === deckId)
   answerCounts.value = logs.reduce<Record<string, number>>((counts, log) => {
@@ -133,6 +138,9 @@ onMounted(load)
 </script>
 <template>
   <div v-if="deck" class="page">
+    <p v-if="needsReimport" class="message warning">
+      元のカード表示を復元できませんでした。「ファイルから更新」でAPKGを再取込してください。学習履歴は保持しています。
+    </p>
     <div class="page-heading deck-detail-heading">
       <div>
         <p class="eyebrow">{{ $locale.sfc.deck }}</p>

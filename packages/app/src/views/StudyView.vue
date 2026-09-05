@@ -357,7 +357,10 @@ onMounted(async () => {
           <span v-if="route.query.cram === '1'" class="badge">{{ $locale.sfc.cram }}</span>
         </div>
         <h1 class="visually-hidden">{{ $locale.sfc.question }}</h1>
-        <ContentRenderer :content="question.prompt" />
+        <ContentRenderer
+          :content="question.prompt"
+          :css="question.kind === 'flashcard' ? question.ankiCss : undefined"
+        />
         <label
           v-if="
             isFlashcard && question.kind === 'flashcard' && question.typeAnswer && !answerVisible
@@ -498,7 +501,11 @@ onMounted(async () => {
           aria-live="polite"
         >
           <h2>{{ $locale.sfc.correctAnswer }}</h2>
-          <ContentRenderer v-if="question.kind === 'flashcard'" :content="question.answer" />
+          <ContentRenderer
+            v-if="question.kind === 'flashcard'"
+            :content="question.answer"
+            :css="question.ankiCss"
+          />
           <div v-if="correctChoices.length" class="correct-answer-list">
             <div v-for="choice in correctChoices" :key="choice.id" class="message">
               <ContentRenderer :content="choice.content" />

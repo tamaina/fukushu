@@ -1,5 +1,7 @@
+import { prepareApkg, applyApkg } from './apkgStore'
 import type { ImportPreview } from './importGift'
 import type { AnkiImportPreview } from './importAnki'
+import type { ApkgPreview } from './importApkg'
 import { createId } from '../utils/id'
 import { emptyStoredCard } from '../infrastructure/fsrs/adapter'
 import {
@@ -83,6 +85,23 @@ export async function saveNewDeck(
   await importSourceRepository.put(source)
   await deckRepository.saveImport(deck, questions, states, importRecord)
   return id
+}
+
+export async function saveApkgDecks(
+  preview: ApkgPreview,
+  fileName: string,
+  progress = true,
+  source?: ImportSourceRecord,
+): Promise<string[]> {
+  return applyApkg(await prepareApkg(preview, fileName, progress, source?.id))
+}
+export async function updateApkgSource(
+  sourceId: string,
+  preview: ApkgPreview,
+  fileName: string,
+  progress = true,
+): Promise<string[]> {
+  return applyApkg(await prepareApkg(preview, fileName, progress, sourceId))
 }
 
 export async function saveAnkiDecks(
@@ -410,6 +429,7 @@ export async function setQuestionEnabled(id: string, enabled: boolean): Promise<
   await stateRepository.put({
     ...state,
     suspended: !enabled,
+    manualSuspended: !enabled,
     suspendedKey: enabled ? 0 : 1,
     updatedAt: new Date().toISOString(),
   })

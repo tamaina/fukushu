@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import type { GiftDiagnostic } from '@fukushu/gift-parser'
-defineProps<{ diagnostics: GiftDiagnostic[]; source: string }>()
+defineProps<{
+  diagnostics: Array<{
+    code: string
+    message: string
+    severity: 'info' | 'warning' | 'error'
+    range?: { start: { line: number; column: number } }
+  }>
+  source: string
+}>()
 const context = (source: string, line: number): string => source.split(/\r?\n/)[line - 1] ?? ''
 </script>
 <template>
@@ -15,10 +22,11 @@ const context = (source: string, line: number): string => source.split(/\r?\n/)[
               ? $locale.sfc.warning
               : $locale.sfc.info
         }}</strong>
-        <span
+        <span v-if="item.range"
           >{{ item.range.start.line }}{{ $locale.sfc.line }} {{ item.range.start.column
           }}{{ $locale.sfc.column }}: {{ item.message }}</span
-        ><code>{{ context(source, item.range.start.line) }}</code>
+        ><span v-else>{{ item.message }}</span
+        ><code v-if="item.range">{{ context(source, item.range.start.line) }}</code>
       </li>
     </ul>
   </section>

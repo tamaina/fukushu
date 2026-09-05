@@ -7,6 +7,8 @@ import './styles/base.css'
 import { settingsRepository } from './infrastructure/db/database'
 
 const preferences = await settingsRepository.get()
+const { repairLegacyApkg } = await import('./application/apkgStore')
+await repairLegacyApkg()
 document.documentElement.dataset.theme = preferences.theme === 'system' ? '' : preferences.theme
 document.documentElement.lang = preferences.locale
 const locale = preferences.locale === 'en' ? 'en-US' : 'ja-JP'

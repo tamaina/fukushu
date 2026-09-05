@@ -27,6 +27,8 @@ pnpm test:e2e
 
 GIFTパーサーはDOMやアプリから独立した `packages/gift-parser` にあります。エスケープを認識する手書きスキャナーを採用し、不正入力を例外ではなく診断値として返します。
 
+APKGの解析・テンプレート変換・安全性検証は独立workspaceの [`@fukushu/anki-import`](packages/anki-import/README.md) にあります。worker接続、Fukushu型への変換、保存・FSRS・UIは`packages/app`が担当します。
+
 ## 対応範囲
 
 単一・複数選択、True/False、短答、数値（完全一致・許容誤差・範囲）を出題できます。Matching、Essay、Descriptionは失わず保存しますが、初版では出題対象外です。

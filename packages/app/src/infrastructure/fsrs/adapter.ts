@@ -54,8 +54,11 @@ export function review(
   now: Date,
   rating: AppRating,
   desiredRetention: number,
+  enableFuzz = false,
 ): { card: StoredFsrsCard; log: StoredFsrsReviewLog } {
-  const scheduler = fsrs(generatorParameters({ request_retention: desiredRetention }))
+  const scheduler = fsrs(
+    generatorParameters({ request_retention: desiredRetention, enable_fuzz: enableFuzz }),
+  )
   const result = scheduler.next(deserializeCard(card), now, ratingMap[rating])
   return { card: serializeCard(result.card), log: serializeLog(result.log) }
 }

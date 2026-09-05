@@ -9,7 +9,7 @@ export interface QuizDeck {
   id: string
   name: string
   description?: string
-  sourceType: 'gift' | 'anki-text'
+  sourceType: 'gift' | 'anki-text' | 'anki-package'
   sourceFileName?: string
   importedAt: string
   updatedAt: string
@@ -94,6 +94,18 @@ export interface FlashcardQuestion extends QuizQuestionBase {
   acceptedAnswer?: string
   ankiNoteType?: string
   ankiTags?: string[]
+  /** Sanitized, container-scoped stylesheet used by imported Anki templates. */
+  ankiCss?: string
+  ankiTemplateMode?: 'native' | 'isolated'
+  ankiSource?: {
+    noteId: string
+    cardId: string
+    notetypeId: string
+    ordinal: number
+    qfmt: string
+    afmt: string
+    css: string
+  }
 }
 export interface UnsupportedQuestion extends QuizQuestionBase {
   kind: 'unsupported'
