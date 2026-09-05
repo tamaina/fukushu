@@ -139,6 +139,7 @@ const QuizQuestionSchema = v.variant('kind', [
     ankiNoteType: v.optional(v.string()),
     ankiTags: v.optional(v.array(v.string())),
     ankiCss: v.optional(v.string()),
+    ankiForceLight: v.optional(v.boolean()),
     ankiTemplateMode: v.optional(v.picklist(['native', 'isolated'])),
     ankiSource: v.optional(
       v.strictObject({
@@ -197,6 +198,7 @@ const DeckSchema = v.strictObject({
   name: v.string(),
   description: v.optional(v.string()),
   studyMode: v.optional(v.picklist(['flashcard', 'quiz']), 'quiz'),
+  historyRevision: v.optional(v.string()),
   sourceType: v.picklist(['gift', 'anki-text', 'anki-package']),
   sourceFileName: v.optional(v.string()),
   sourceHash: v.string(),
@@ -278,6 +280,7 @@ const BackupSchema = v.strictObject({
         sourceArchiveBase64: v.optional(v.string()),
         packageFormat: v.optional(v.picklist(['anki2', 'anki21', '21b'])),
         importProgress: v.optional(v.boolean()),
+        forceLight: v.optional(v.boolean()),
         revision: v.optional(integer()),
         needsReimport: v.optional(v.boolean()),
         importedAt: iso(),

@@ -132,3 +132,20 @@ test('diagnostics identify cards and simple HTML can be imported without an ifra
   })
   expect(formats).toEqual(['markdown'])
 })
+test('question pagination returns to the list heading in both directions', async ({ page }) => {
+  await page.goto('/import')
+  await page.getByLabel('問題集名').fill('ページ切替')
+  await page
+    .getByLabel('GIFTテキスト')
+    .fill(Array.from({ length: 100 }, (_, i) => `問題${i} {TRUE}`).join('\n\n'))
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  const heading = page.getByRole('heading', { name: '問題一覧', exact: true })
+  for (const name of ['次へ', '前へ']) {
+    await page.getByRole('button', { name, exact: true }).click()
+    await expect(heading).toBeFocused()
+    await expect
+      .poll(() => heading.evaluate((el) => Math.abs(el.getBoundingClientRect().top)))
+      .toBeLessThan(5)
+  }
+})

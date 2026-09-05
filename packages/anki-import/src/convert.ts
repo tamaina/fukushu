@@ -149,6 +149,7 @@ export async function convertArchive(
   const deckDefinitions = json<Record<string, AnkiDeckDefinition>>(col.decks)
   const mediaMap = files.media ? decodeMediaMap(files.media, packageFormat === '21b') : []
   const media: AnkiMedia[] = []
+  const mediaIds = new Set<string>()
   options.onProgress?.('メディアを検証し、カードを変換しています')
   const mediaUrls = new Map<string, { id: string; url: string }>()
   for (const entry of mediaMap) {
@@ -182,13 +183,14 @@ export async function convertArchive(
       }
     }
     const id = await sha256Bytes(data)
-    if (!media.some((item) => item.id === id))
+    if (!mediaIds.has(id))
       media.push({
         id,
         mimeType: mime,
         data,
         size: data.length,
       })
+    mediaIds.add(id)
     mediaUrls.set(entry.name, { id, url: 'fukushu-media:' + id })
   }
   const notes = new Map((rows.notes ?? []).map((note) => [Number(note.id), note]))
@@ -240,7 +242,17 @@ export async function convertArchive(
       },
     ]),
   )
+  let yieldedAt = Date.now()
+  const styles = new Map<string, { css: string; removed: boolean }>()
+  let convertedCount = 0
   for (const card of cards) {
+    if (Date.now() - yieldedAt >= 16) {
+      options.onProgress?.(`カードを変換しています（${convertedCount} / ${cards.length}）`)
+      await new Promise<void>((resolve) => setTimeout(resolve, 0))
+      yieldedAt = Date.now()
+    }
+    if (options.signal?.aborted) throw new DOMException('キャンセルしました', 'AbortError')
+    convertedCount++
     const note = notes.get(Number(card.nid))
     const diagnosticStart = diagnostics.length
     try {
@@ -343,10 +355,17 @@ export async function convertArchive(
         model.css ?? '',
         fields,
       )
-      let cssRemoved = false
-      const css = safeAnkiCss(model.css ?? '', () => {
-        cssRemoved = true
-      })
+      const rawCss = model.css ?? ''
+      let style = styles.get(rawCss)
+      if (!style) {
+        let removed = false
+        const css = safeAnkiCss(rawCss, () => {
+          removed = true
+        })
+        style = { css, removed }
+        styles.set(rawCss, style)
+      }
+      const { css, removed: cssRemoved } = style
       if (cssRemoved)
         diagnostics.push(diagnostic('APKG_UNSAFE_CSS', '未対応のCSS・外部参照を除去しました。'))
       const simplifiedFront = simple ? undefined : simplifyHtml(prompt, css)

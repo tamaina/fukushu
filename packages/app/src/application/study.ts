@@ -78,8 +78,14 @@ export async function buildStudyQueue(
     (state) => !state.suspended && (!deckId || state.deckId === deckId),
   )
   const items: StudyItem[] = []
-  for (const state of states) {
-    const question = await questionRepository.get(state.questionId)
+  const reviewStates = states.filter(
+    (state) => state.card.reps > 0 && (cram || new Date(state.card.due) <= now),
+  )
+  const reviewQuestions = await questionRepository.getMany(
+    reviewStates.map((state) => state.questionId),
+  )
+  for (const [index, state] of reviewStates.entries()) {
+    const question = reviewQuestions[index]
     if (!question?.enabled || question.kind === 'unsupported') continue
     const isNew = state.card.reps === 0
     if (!isNew && (cram || new Date(state.card.due) <= now)) {
@@ -99,8 +105,9 @@ export async function buildStudyQueue(
     (state) => state.card.reps === 0 && (cram || !studiedToday.includes(state.questionId)),
   )
   const fresh = cram ? availableFresh : availableFresh.slice(0, settings.newQuestionsPerDay)
-  for (const state of fresh) {
-    const question = await questionRepository.get(state.questionId)
+  const freshQuestions = await questionRepository.getMany(fresh.map((state) => state.questionId))
+  for (const [index, state] of fresh.entries()) {
+    const question = freshQuestions[index]
     if (question?.enabled && question.kind !== 'unsupported') {
       items.push({
         question: prepareQuestion(question, settings.shuffleChoices),

@@ -8,7 +8,7 @@ import {
   deckRepository,
   importSourceRepository,
   questionRepository,
-  reviewRepository,
+  database,
   stateRepository,
 } from '../infrastructure/db/database'
 import type {
@@ -460,17 +460,36 @@ export async function setDeckStudyMode(
 
 export async function resetDeckHistory(deckId: string): Promise<void> {
   const now = new Date()
-  for (const question of await questionRepository.byDeck(deckId)) {
-    const state = await stateRepository.get(question.id)
-    if (state) {
-      const activeState = { ...state }
-      delete activeState.buriedUntil
-      await stateRepository.put({
-        ...activeState,
-        card: emptyStoredCard(now),
-        updatedAt: now.toISOString(),
-      })
+  const tx = (await database()).transaction(['decks', 'studyStates', 'reviewLogs'], 'readwrite')
+  try {
+    const deck = await tx.objectStore('decks').get(deckId)
+    if (!deck) {
+      await tx.done
+      return
     }
+    const range = globalThis.IDBKeyRange.bound([deckId, ''], [deckId, '\uffff'])
+    for (const state of await tx.objectStore('studyStates').index('by-deck-due').getAll(range)) {
+      delete state.buriedUntil
+      await tx
+        .objectStore('studyStates')
+        .put({ ...state, card: emptyStoredCard(now), updatedAt: now.toISOString() })
+    }
+    for (const key of await tx
+      .objectStore('reviewLogs')
+      .index('by-deck-reviewed-at')
+      .getAllKeys(range))
+      await tx.objectStore('reviewLogs').delete(key)
+    await tx
+      .objectStore('decks')
+      .put({ ...deck, historyRevision: createId(), updatedAt: now.toISOString() })
+    await tx.done
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* already aborted */
+    }
+    await tx.done.catch(() => {})
+    throw error
   }
-  await reviewRepository.removeByDeck(deckId)
 }

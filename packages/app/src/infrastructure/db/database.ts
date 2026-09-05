@@ -200,6 +200,12 @@ export const mediaRepository = {
   all: async (): Promise<MediaRecord[]> => (await database()).getAll('media'),
 }
 export const questionRepository = {
+  getMany: async (ids: string[]): Promise<(QuestionRecord | undefined)[]> => {
+    const tx = (await database()).transaction('questions')
+    const values = await Promise.all(ids.map((id) => tx.store.get(id)))
+    await tx.done
+    return values
+  },
   byDeck: async (deckId: string): Promise<QuestionRecord[]> => {
     const range = globalThis.IDBKeyRange.bound([deckId, 0], [deckId, Number.MAX_SAFE_INTEGER])
     return (await database()).getAllFromIndex('questions', 'by-deck-order', range)

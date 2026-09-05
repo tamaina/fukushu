@@ -96,6 +96,7 @@ export interface FlashcardQuestion extends QuizQuestionBase {
   ankiTags?: string[]
   /** Sanitized, container-scoped stylesheet used by imported Anki templates. */
   ankiCss?: string
+  ankiForceLight?: boolean
   ankiTemplateMode?: 'native' | 'isolated'
   ankiSource?: {
     guid?: string

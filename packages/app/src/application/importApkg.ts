@@ -22,6 +22,7 @@ export interface ApkgDeckPreview {
   isolatedCount: number
 }
 export interface ApkgPreview {
+  forceLight?: boolean
   sourceHash: string
   packageFormat: AnkiPackage['format']
   diagnostics: AnkiDiagnostic[]
@@ -56,6 +57,9 @@ export async function previewApkg(
           reader.readAsArrayBuffer(file)
         })
   const bytes = new Uint8Array(buffer)
+  const sourceHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', buffer))]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
   options.onProgress?.('アーカイブとSQLiteを解析しています')
   const decoded: DecodedArchive =
     typeof Worker === 'undefined'
@@ -88,12 +92,9 @@ export async function previewApkg(
             return
           }
           options.signal?.addEventListener('abort', abort, { once: true })
-          worker.postMessage(buffer)
+          worker.postMessage(buffer, [buffer])
         })
   const parsed = await convertArchive(decoded, options)
-  const sourceHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', buffer))]
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
   return {
     sourceHash,
     packageFormat: parsed.format,

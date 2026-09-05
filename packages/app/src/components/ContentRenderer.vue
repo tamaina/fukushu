@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import { renderCardMath } from '../utils/renderMath'
+import { trimContentEdges } from '../utils/trimContentEdges'
 import 'katex/dist/katex.min.css'
 import { marked } from 'marked'
 import type { QuizContent } from '../domain/quiz/types'
@@ -10,6 +11,8 @@ import type { MediaRecord } from '../infrastructure/db/schema'
 const props = defineProps<{
   content: QuizContent
   css?: string | undefined
+  forceLight?: boolean | undefined
+  summary?: boolean
   media?: MediaRecord[] | undefined
 }>()
 const html = computed(() => {
@@ -32,19 +35,28 @@ const html = computed(() => {
     if (!(media.getAttribute('src') ?? '').startsWith('data:')) {
       const replacement = document.createElement('span')
       replacement.className = 'missing-media'
-      replacement.textContent = media.getAttribute('src') || '[missing media]'
+      replacement.textContent = props.summary
+        ? media.getAttribute('alt') || (media.tagName === 'AUDIO' ? '[音声]' : '[画像]')
+        : media.getAttribute('src') || '[missing media]'
       media.replaceWith(replacement)
     }
   }
+  trimContentEdges(element)
   renderCardMath(element)
   return element.innerHTML
 })
 </script>
 <template>
   <AnkiFrame
-    v-if="css !== undefined || content.value.includes('fukushu-media:')"
+    v-if="
+      !summary &&
+      (css !== undefined ||
+        content.value.includes('fukushu-media:') ||
+        (forceLight && content.format === 'html'))
+    "
     :html="content.value"
     :css="css"
+    :force-light="forceLight"
     :media="media"
   />
   <div v-else>

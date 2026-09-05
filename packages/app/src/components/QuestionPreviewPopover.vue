@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import { Check, Eye, X } from '@lucide/vue'
 import type { QuizQuestion } from '../domain/quiz/types'
 import ContentRenderer from './ContentRenderer.vue'
@@ -8,6 +8,7 @@ const props = defineProps<{ question: QuizQuestion }>()
 
 const popoverId = computed(() => `question-preview-${props.question.id}`)
 const previewDialog = ref<{ showModal: () => void; close: () => void }>()
+const opened = ref(false)
 const correctChoices = computed(() => {
   if (props.question.kind !== 'single-choice' && props.question.kind !== 'multiple-choice')
     return []
@@ -32,7 +33,9 @@ const numericalAnswers = computed(() => {
       return `${answer.min}〜${answer.max}`
     })
 })
-function openPreview(): void {
+async function openPreview(): Promise<void> {
+  opened.value = true
+  await nextTick()
   previewDialog.value?.showModal()
 }
 function closePreview(): void {
@@ -49,12 +52,14 @@ function closePreview(): void {
     <Eye aria-hidden="true" />{{ $locale.sfc.preview }}
   </button>
   <dialog
+    v-if="opened"
     :id="popoverId"
     ref="previewDialog"
     class="question-preview-popover"
     :aria-labelledby="question.name ? `${popoverId}-title` : undefined"
     :aria-label="question.name ? undefined : $locale.sfc.previewTitle"
     @click.self.stop="closePreview"
+    @close="opened = false"
   >
     <div class="question-preview-heading">
       <div>
@@ -69,6 +74,7 @@ function closePreview(): void {
     <ContentRenderer
       :content="question.prompt"
       :css="question.kind === 'flashcard' ? question.ankiCss : undefined"
+      :force-light="question.kind === 'flashcard' ? question.ankiForceLight : undefined"
     />
 
     <fieldset
@@ -136,7 +142,11 @@ function closePreview(): void {
     </div>
     <p v-else-if="question.kind === 'essay'" class="muted">{{ $locale.sfc.essay }}</p>
     <div v-else-if="question.kind === 'flashcard'" class="message">
-      <ContentRenderer :content="question.answer" :css="question.ankiCss" />
+      <ContentRenderer
+        :content="question.answer"
+        :css="question.ankiCss"
+        :force-light="question.ankiForceLight"
+      />
     </div>
     <p v-else-if="question.kind === 'description'" class="muted">
       {{ $locale.sfc.description }}

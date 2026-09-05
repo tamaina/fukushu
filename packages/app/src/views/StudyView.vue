@@ -27,6 +27,7 @@ interface StoredStudyResult {
   correct: boolean
 }
 interface StoredStudySession {
+  historyRevisions?: Record<string, string>
   deckId: string | null
   cram?: boolean
   questionIds: string[]
@@ -70,7 +71,11 @@ const showResults = computed(
     (checkpointVisible.value || interruptionVisible.value || index.value >= queue.value.length),
 )
 const question = computed(() => item.value?.question.payload)
-const isFlashcard = computed(() => item.value?.studyMode === 'flashcard')
+// Native flashcards have no quiz choices; their answer/reveal flow remains self-rated
+// even when they belong to a deck using quiz mode.
+const isFlashcard = computed(
+  () => item.value?.studyMode === 'flashcard' || item.value?.question.payload.kind === 'flashcard',
+)
 const backTarget = computed(() =>
   typeof route.query.deck === 'string' ? `/decks/${route.query.deck}` : '/',
 )
@@ -127,10 +132,12 @@ const numericalAnswers = computed(() => {
     })
 })
 const sessionKey = 'fukushu-study-session-v1'
+let historyRevisions: Record<string, string> = {}
 function persistSession(): void {
   sessionStorage.setItem(
     sessionKey,
     JSON.stringify({
+      historyRevisions,
       deckId: typeof route.query.deck === 'string' ? route.query.deck : null,
       cram: route.query.cram === '1',
       questionIds: queue.value.map((entry) => entry.question.id),
@@ -263,6 +270,10 @@ onMounted(async () => {
   let cram = route.query.cram === '1'
   const settings = await settingsRepository.get()
   checkpointInterval.value = settings.checkpointInterval
+  const currentDecks = await deckRepository.all()
+  historyRevisions = Object.fromEntries(
+    currentDecks.map((deck) => [deck.id, deck.historyRevision ?? '']),
+  )
   let restored: StoredStudySession | undefined
   try {
     restored = JSON.parse(sessionStorage.getItem(sessionKey) ?? '') as StoredStudySession
@@ -274,7 +285,10 @@ onMounted(async () => {
     restored.deckId === (deckId ?? null) &&
     Boolean(restored.cram) === cram &&
     Array.isArray(restored.questionIds) &&
-    restored.questionIds.length > 0
+    restored.questionIds.length > 0 &&
+    (deckId ? [deckId] : Object.keys(historyRevisions)).every(
+      (id) => (restored.historyRevisions?.[id] ?? '') === historyRevisions[id],
+    )
   ) {
     for (const id of restored.questionIds) {
       const question = await questionRepository.get(id)
@@ -347,7 +361,7 @@ onMounted(async () => {
           {{ $locale.sfc.stop }}
         </button>
       </header>
-      <article class="question-card">
+      <article :key="question.id" class="question-card">
         <div class="question-card-meta">
           <span v-if="item.deckName" class="badge">{{ item.deckName }}</span>
           <span class="badge">{{
@@ -360,6 +374,7 @@ onMounted(async () => {
         <ContentRenderer
           :content="question.prompt"
           :css="question.kind === 'flashcard' ? question.ankiCss : undefined"
+          :force-light="question.kind === 'flashcard' ? question.ankiForceLight : undefined"
         />
         <label
           v-if="
@@ -496,7 +511,8 @@ onMounted(async () => {
           </button>
         </div>
         <section
-          v-if="isFlashcard && answerVisible"
+          v-if="isFlashcard"
+          v-show="answerVisible"
           class="feedback flashcard-answer"
           aria-live="polite"
         >
@@ -505,6 +521,7 @@ onMounted(async () => {
             v-if="question.kind === 'flashcard'"
             :content="question.answer"
             :css="question.ankiCss"
+            :force-light="question.ankiForceLight"
           />
           <div v-if="correctChoices.length" class="correct-answer-list">
             <div v-for="choice in correctChoices" :key="choice.id" class="message">

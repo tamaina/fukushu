@@ -212,6 +212,42 @@ test('can switch a deck to flashcard mode and self-rate the revealed answer', as
   await expect(page.getByRole('heading', { name: '1問正解' })).toBeVisible()
 })
 
+test('reset in another tab invalidates a non-empty saved study session', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/import')
+  await page.getByLabel('問題集名').fill('リセット確認')
+  await page.getByLabel('GIFTテキスト').fill('一問目 {TRUE}\n\n二問目 {FALSE}')
+  await page.getByRole('button', { name: '解析する' }).click()
+  await page.getByRole('button', { name: '問題集として保存' }).click()
+  await expect(page).toHaveURL(/\/decks\//)
+  const deckUrl = page.url()
+  await page.getByRole('radio', { name: /単語帳/ }).check()
+  await page.getByRole('link', { name: 'この問題集を学習' }).click()
+  await expect(page).toHaveURL(/\/study\?deck=/)
+  const studyUrl = page.url()
+  await page.getByRole('button', { name: '答えを見る' }).click()
+  await page.getByRole('button', { name: 'わかった', exact: true }).click()
+  await expect(page.locator('.study-header')).toContainText('2 / 2')
+  const other = await context.newPage()
+  await other.goto(deckUrl)
+  await other.getByRole('button', { name: '履歴をリセット', exact: true }).click()
+  await other
+    .getByRole('dialog')
+    .getByRole('button', { name: '履歴をリセット', exact: true })
+    .click()
+  await expect(other.getByRole('dialog')).not.toBeVisible()
+  await page.goto(studyUrl)
+  await expect(page.locator('.study-header')).toContainText('1 / 2')
+  const session = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem('fukushu-study-session-v1')!),
+  )
+  expect(session.index).toBe(0)
+  expect(session.results).toEqual([])
+  await other.close()
+})
+
 test('accepts a decimal numerical answer with Enter', async ({ page }) => {
   await page.goto('/import')
   await page.getByLabel('問題集名').fill('数値問題')

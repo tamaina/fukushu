@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Download, Flame, Play, RotateCcw, Trash2 } from '@lucide/vue'
 import QuestionPreviewPopover from '../components/QuestionPreviewPopover.vue'
@@ -18,7 +18,16 @@ const route = useRoute()
 const router = useRouter()
 const deck = ref<DeckRecord>()
 const needsReimport = ref(false)
-const questions = ref<QuestionRecord[]>([])
+const questions = shallowRef<QuestionRecord[]>([])
+const page = ref(0)
+const pageSize = 50
+const listHeading = ref<HTMLElement>()
+async function changePage(next: number) {
+  page.value = next
+  await nextTick()
+  listHeading.value?.focus({ preventScroll: true })
+  listHeading.value?.scrollIntoView({ block: 'start', behavior: 'instant' })
+}
 const answerCounts = ref<Record<string, number>>({})
 const ratingCounts = ref<Record<string, RatingCounts>>({})
 const latestRatings = ref<Record<string, ReviewLogRecord['rating']>>({})
@@ -27,6 +36,9 @@ const deleteDialog = ref<{ showModal: () => void; close: () => void }>()
 const resetting = ref(false)
 const deleting = ref(false)
 const category = ref('')
+watch(category, () => {
+  page.value = 0
+})
 const deckId = String(route.params.deckId)
 const categories = computed(() => [
   ...new Set(questions.value.map((q) => q.payload.categoryPath.join(' / ')).filter(Boolean)),
@@ -235,7 +247,7 @@ onMounted(load)
     </section>
     <section>
       <div class="section-heading">
-        <h2>{{ $locale.sfc.questions }}</h2>
+        <h2 ref="listHeading" tabindex="-1">{{ $locale.sfc.questions }}</h2>
         <label v-if="categories.length"
           >{{ $locale.sfc.category
           }}<select v-model="category">
@@ -245,12 +257,16 @@ onMounted(load)
         >
       </div>
       <ul class="question-list">
-        <li v-for="question in visible" :key="question.id">
+        <li
+          v-for="question in visible.slice(page * pageSize, (page + 1) * pageSize)"
+          :key="question.id"
+        >
           <div>
             <strong v-if="question.payload.name">{{ question.payload.name }}</strong>
             <ContentRenderer
               v-else
               class="question-list-prompt"
+              summary
               :content="question.payload.prompt"
             />
             <div class="question-meta">
@@ -305,6 +321,19 @@ onMounted(load)
           </div>
         </li>
       </ul>
+      <nav v-if="visible.length > pageSize" class="actions" aria-label="問題一覧のページ">
+        <button class="secondary" :disabled="page === 0" @click="changePage(page - 1)">
+          {{ $locale.sfc.previousPage }}
+        </button>
+        <span>{{ page + 1 }} / {{ Math.ceil(visible.length / pageSize) }}</span>
+        <button
+          class="secondary"
+          :disabled="(page + 1) * pageSize >= visible.length"
+          @click="changePage(page + 1)"
+        >
+          {{ $locale.sfc.nextPage }}
+        </button>
+      </nav>
     </section>
     <dialog
       ref="resetDialog"
@@ -351,6 +380,8 @@ onMounted(load)
   </div>
 </template>
 <locale locale="ja-JP" lang="yaml">
+previousPage: 前へ
+nextPage: 次へ
 deck: 問題集
 deckSummary: '{total}問・{enabled}問が有効'
 deckRatingSummary: 'Ratingの割合: もう一度 {again}、難しかった {hard}、正解 {good}、簡単 {easy}、未出題 {unseen}'
@@ -390,6 +421,8 @@ removeConfirm: '「{name}」と学習履歴を削除しますか？'
 notFound: 問題集が見つかりません。
 </locale>
 <locale locale="en-US" lang="yaml">
+previousPage: Previous
+nextPage: Next
 deck: Deck
 deckSummary: '{total} questions · {enabled} enabled'
 deckRatingSummary: 'Rating distribution: Again {again}, Hard {hard}, Good {good}, Easy {easy}, Unseen {unseen}'

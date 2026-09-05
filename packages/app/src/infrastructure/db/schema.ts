@@ -24,6 +24,7 @@ export interface StoredFsrsReviewLog {
   review: string
 }
 export interface DeckRecord {
+  historyRevision?: string
   id: string
   name: string
   description?: string
@@ -48,6 +49,7 @@ export interface ImportSourceRecord {
   sourceArchive?: Blob
   packageFormat?: 'anki2' | 'anki21' | '21b'
   importProgress?: boolean
+  forceLight?: boolean
   revision?: number
   needsReimport?: boolean
   importedAt: string

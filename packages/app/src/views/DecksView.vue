@@ -15,25 +15,21 @@ async function load(): Promise<void> {
   const states = await stateRepository.all()
   const logs = await reviewRepository.all()
   const now = new Date()
-  for (const deck of decks.value) {
-    const deckStates = states.filter((state) => state.deckId === deck.id && !state.suspended)
-    const deckLogs = logs.filter((log) => log.deckId === deck.id)
-    const next = deckStates
-      .filter((state) => state.card.reps > 0)
-      .map((state) => state.card.due)
-      .sort()[0]
-    const last = deckLogs
-      .map((log) => log.reviewedAt)
-      .sort()
-      .at(-1)
-    stats.value[deck.id] = {
-      studied: deckStates.filter((state) => state.card.reps > 0).length,
-      due: deckStates.filter((state) => state.card.reps > 0 && new Date(state.card.due) <= now)
-        .length,
-      ...(next ? { next } : {}),
-      ...(last ? { last } : {}),
-    }
+  const summary: typeof stats.value = Object.fromEntries(
+    decks.value.map((deck) => [deck.id, { studied: 0, due: 0 }]),
+  )
+  for (const state of states) {
+    const stat = summary[state.deckId]
+    if (!stat || state.suspended || state.card.reps === 0) continue
+    stat.studied++
+    if (new Date(state.card.due) <= now) stat.due++
+    if (!stat.next || state.card.due < stat.next) stat.next = state.card.due
   }
+  for (const log of logs) {
+    const stat = summary[log.deckId]
+    if (stat && (!stat.last || log.reviewedAt > stat.last)) stat.last = log.reviewedAt
+  }
+  stats.value = summary
 }
 onMounted(load)
 </script>

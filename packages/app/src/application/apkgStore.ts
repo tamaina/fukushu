@@ -148,6 +148,7 @@ export async function prepareApkg(
     sourceArchive: preview.archive,
     packageFormat: preview.packageFormat,
     importProgress: progress,
+    forceLight: preview.forceLight ?? false,
     revision: (oldSource?.revision ?? 0) + 1,
     importedAt: oldSource?.importedAt ?? now,
     updatedAt: now,

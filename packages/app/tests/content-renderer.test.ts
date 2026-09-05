@@ -3,6 +3,29 @@ import { mount } from '@vue/test-utils'
 import ContentRenderer from '../src/components/ContentRenderer.vue'
 
 describe('ContentRenderer', () => {
+  it('trims boundary blank lines but preserves indentation and internal line breaks', () => {
+    const wrapper = mount(ContentRenderer, {
+      props: { content: { format: 'plain', value: '\n\n  first\n\nsecond\n \n' } },
+    })
+    expect(wrapper.find('.plain-content').element.textContent).toBe('  first\n\nsecond')
+  })
+  it('removes boundary HTML breaks and empty paragraphs without changing code or interior breaks', () => {
+    const wrapper = mount(ContentRenderer, {
+      props: {
+        content: {
+          format: 'html',
+          value: '\n<p><br></p><div><br><b>first</b><br>second<br></div><p><br></p>\n',
+        },
+      },
+    })
+    expect(wrapper.find('.rich-content').element.innerHTML).toBe(
+      '<div><b>first</b><br>second</div>',
+    )
+    const code = mount(ContentRenderer, {
+      props: { content: { format: 'html', value: '<pre><code>\n  code\n</code></pre>' } },
+    })
+    expect(code.find('pre').element.textContent).toBe('\n  code\n')
+  })
   it('renders inline and display LaTeX in plain GIFT content', () => {
     const wrapper = mount(ContentRenderer, {
       props: {

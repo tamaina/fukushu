@@ -91,9 +91,13 @@ const preview = shallowRef<ImportPreview>()
 const ankiPreview = shallowRef<AnkiImportPreview>()
 const apkgPreview = shallowRef<ApkgPreview>()
 const importProgress = ref(true)
-watch([selectedSource, importProgress], () => {
-  void refreshApkg().catch((error) => (message.value = String(error)))
-})
+watch(
+  [apkgPreview, selectedSource, importProgress, fileName],
+  () => {
+    void refreshApkg().catch((error) => (message.value = String(error)))
+  },
+  { flush: 'post' },
+)
 const updateDiff = ref<DeckUpdateDiff>()
 const busy = ref(false)
 const message = ref('')
@@ -104,10 +108,11 @@ const analysisFile = ref('')
 let analysisRun = 0
 const originalApkg = shallowRef<ApkgPreview>()
 const simplifyCards = ref(true)
+const forceLight = ref(false)
 const simplifiableCount = computed(
   () => Object.keys(originalApkg.value?.simplifiedCards ?? {}).length,
 )
-watch([simplifyCards, originalApkg], () => {
+watch([simplifyCards, forceLight, originalApkg], () => {
   if (!originalApkg.value) return
   const original = originalApkg.value
   apkgPreview.value = !simplifyCards.value
@@ -135,7 +140,17 @@ watch([simplifyCards, originalApkg], () => {
           }
         }),
       }
-  void refreshApkg().catch((error) => (message.value = String(error)))
+  apkgPreview.value = {
+    ...apkgPreview.value,
+    forceLight: forceLight.value,
+    decks: apkgPreview.value.decks.map((deck) => ({
+      ...deck,
+      questions: deck.questions.map((question) => ({
+        ...question,
+        ankiForceLight: forceLight.value,
+      })),
+    })),
+  }
 })
 watch(phase, async () => {
   await nextTick()
@@ -294,6 +309,8 @@ async function readFile(file?: File): Promise<void> {
           : ''
       if (run !== analysisRun) return
       simplifyCards.value = true
+      forceLight.value =
+        matches.find((candidate) => candidate.source.id === sourceId)?.source.forceLight ?? false
       originalApkg.value = result
       apkgPreview.value = result
       candidates.value = matches
@@ -302,7 +319,7 @@ async function readFile(file?: File): Promise<void> {
       cardIndex.value = 0
       source.value = '[' + file.name + ']'
       fileName.value = file.name
-      await refreshApkg()
+      await nextTick()
     } else {
       const buffer = await file.arrayBuffer()
       if (run !== analysisRun) return
@@ -563,6 +580,17 @@ onMounted(async () => {
               </select>
             </label>
             <div class="import-options">
+              <div>
+                <label class="inline-control"
+                  ><input
+                    v-model="forceLight"
+                    type="checkbox"
+                  />HTMLカードをライトモードで表示（白背景）</label
+                >
+                <p class="option-help muted">
+                  通常はアプリのテーマに追従します。オンにするとHTMLカードは常にライトモードになります。元のCSSにある背景色は維持します。
+                </p>
+              </div>
               <div v-if="simplifiableCount">
                 <label class="inline-control"
                   ><input v-model="simplifyCards" type="checkbox" /><span
@@ -605,11 +633,22 @@ onMounted(async () => {
                 </select></label
               >
             </div>
-            <div v-if="apkgCard" id="apkg-card-preview" tabindex="-1" class="card-preview">
+            <div
+              v-if="apkgCard"
+              id="apkg-card-preview"
+              tabindex="-1"
+              class="card-preview"
+              :style="{
+                '--fukushu-card-bg': forceLight ? '#fff' : 'var(--color-surface)',
+                '--color-text': forceLight ? '#1d211f' : undefined,
+                '--color-muted': forceLight ? '#626965' : undefined,
+              }"
+            >
               <p class="preview-side-label">問題</p>
               <ContentRenderer
                 :content="apkgCard.prompt"
                 :css="apkgCard.ankiCss"
+                :force-light="apkgCard.ankiForceLight"
                 :media="apkgPreview.media"
               />
               <div class="preview-answer">
@@ -617,6 +656,7 @@ onMounted(async () => {
                 <ContentRenderer
                   :content="apkgCard.answer"
                   :css="apkgCard.ankiCss"
+                  :force-light="apkgCard.ankiForceLight"
                   :media="apkgPreview.media"
                 />
               </div>
@@ -866,6 +906,10 @@ onMounted(async () => {
 }
 .preview-controls label {
   min-width: 0;
+}
+#apkg-card-preview {
+  background: var(--fukushu-card-bg);
+  color: var(--color-text);
 }
 .card-preview {
   padding: var(--space-5);
