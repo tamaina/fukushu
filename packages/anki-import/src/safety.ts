@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify'
 import { parse, generate, walk } from 'css-tree'
+export { safeAnkiSvg } from './svg'
 
 export function safeAnkiCss(css: string, onRemoved?: () => void): string {
   try {

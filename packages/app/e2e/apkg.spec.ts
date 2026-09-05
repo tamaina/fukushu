@@ -137,10 +137,15 @@ test('untrusted HTML and CSS cannot affect the host or make requests', async ({ 
     }),
     JSON.stringify({ 1: { name: '安全性' } }),
   ])
-  db.run(
-    'insert into notes values(1,"guid",1,"visible text"," ");insert into cards values(1,1,1,0)',
-  )
-  const bytes = zipSync({ 'collection.anki21': db.export(), media: strToU8('{}') })
+  db.run('insert into notes values(1,"guid",1,?," ")', ['visible text<img src="flag.svg">'])
+  db.run('insert into cards values(1,1,1,0)')
+  const bytes = zipSync({
+    'collection.anki21': db.export(),
+    media: strToU8('{"0":"flag.svg"}'),
+    0: strToU8(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="20" onload="alert(1)"><rect width="32" height="20" fill="red"/><script>fetch("https://trap.invalid/svg")</script><foreignObject><iframe src="https://trap.invalid/frame"/></foreignObject><image href="https://trap.invalid/image"/></svg>',
+    ),
+  })
   db.close()
   const external: string[] = []
   page.on('request', (request) => {
@@ -151,6 +156,10 @@ test('untrusted HTML and CSS cannot affect the host or make requests', async ({ 
     .locator('input[type=file]')
     .setInputFiles({ name: 'attack.apkg', mimeType: 'application/zip', buffer: Buffer.from(bytes) })
   await expect(page.frameLocator('iframe').first().getByText('visible text')).toBeVisible()
+  await expect(page.frameLocator('iframe').first().locator('img[src^="blob:"]')).toHaveJSProperty(
+    'naturalWidth',
+    32,
+  )
   await expect(page.getByRole('heading', { name: '問題集を読み込む' })).toBeVisible()
   await expect(page.locator('iframe').first()).toHaveAttribute('sandbox', 'allow-same-origin')
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).display)).not.toBe('none')

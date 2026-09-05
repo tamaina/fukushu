@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { safeAnkiCss, safeAnkiHtml } from '@fukushu/anki-import/safety'
+import { safeAnkiCss, safeAnkiHtml, safeAnkiSvg } from '@fukushu/anki-import/safety'
 import { database, settingsRepository } from '../infrastructure/db/database'
 import type {
   DeckRecord,
@@ -142,6 +142,7 @@ const QuizQuestionSchema = v.variant('kind', [
     ankiTemplateMode: v.optional(v.picklist(['native', 'isolated'])),
     ankiSource: v.optional(
       v.strictObject({
+        guid: v.optional(v.string()),
         noteId: v.string(),
         cardId: v.string(),
         notetypeId: v.string(),
@@ -433,6 +434,7 @@ export async function restoreBackup(value: unknown): Promise<void> {
         .join('')
       if (hash !== item.id || blob.size !== item.size)
         throw new Error('Invalid backup media hash or size')
+      if (item.mimeType === 'image/svg+xml') safeAnkiSvg(await blob.text())
       return { ...item, blob }
     }),
   )

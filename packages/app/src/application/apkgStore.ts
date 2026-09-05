@@ -192,7 +192,28 @@ export async function prepareApkg(
     for (const [order, payload] of incoming.questions.entries()) {
       if (incomingKeys.has(payload.sourceKey)) throw new Error('取込カードキーが重複しています。')
       incomingKeys.add(payload.sourceKey)
-      const old = byKey.get(payload.sourceKey),
+      const incomingMeta = payload.ankiSource
+      const base =
+        incomingMeta?.guid === undefined
+          ? payload.sourceKey
+          : String(incomingMeta.guid) + ':' + incomingMeta.ordinal
+      const history = existing.filter(
+        (q) =>
+          q.sourceKey === base ||
+          q.sourceKey.startsWith(base + ':note:') ||
+          (q.payload.kind === 'flashcard' &&
+            q.payload.ankiSource?.guid === incomingMeta?.guid &&
+            q.payload.ankiSource?.ordinal === incomingMeta?.ordinal &&
+            incomingMeta?.guid !== undefined),
+      )
+      const origin = history.find(
+        (q) =>
+          !touched.has(q.id) &&
+          q.payload.kind === 'flashcard' &&
+          q.payload.ankiSource?.noteId === incomingMeta?.noteId &&
+          incomingMeta?.noteId !== undefined,
+      )
+      const old = origin ?? (history.length <= 1 ? byKey.get(payload.sourceKey) : undefined),
         questionId = old?.id ?? createId(),
         state = allStates.find((s) => s.questionId === questionId)
       touched.add(questionId)
@@ -274,7 +295,17 @@ export async function prepareApkg(
     }
   }
   for (const old of existing.filter((q) => !touched.has(q.id))) {
-    result.questions.push({ ...old, enabled: false, enabledKey: 0, updatedAt: now })
+    const retiredKey = incomingKeys.has(old.sourceKey)
+      ? old.sourceKey + ':retired:' + old.id
+      : old.sourceKey
+    result.questions.push({
+      ...old,
+      sourceKey: retiredKey,
+      payload: { ...old.payload, sourceKey: retiredKey },
+      enabled: false,
+      enabledKey: 0,
+      updatedAt: now,
+    })
     const state = allStates.find((s) => s.questionId === old.id)
     if (state)
       result.states.push({

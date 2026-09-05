@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { mediaRepository } from '../infrastructure/db/database'
-import { safeAnkiCss, safeAnkiHtml } from '@fukushu/anki-import/safety'
+import { safeAnkiCss, safeAnkiHtml, safeAnkiSvg } from '@fukushu/anki-import/safety'
+import { renderCardMath } from '../utils/renderMath'
+import mathCss from 'katex/dist/katex.min.css?inline'
 import type { MediaRecord } from '../infrastructure/db/schema'
 const props = defineProps<{
   html: string
@@ -26,10 +28,14 @@ watch(
       const record = props.media?.find((m) => m.id === id) ?? (await mediaRepository.get(id))
       if (
         !record ||
-        !/^(image\/(png|jpeg|gif|webp)|audio\/(mpeg|ogg|wav|mp4))$/.test(record.mimeType)
+        !/^(image\/(png|jpeg|gif|webp|svg\+xml)|audio\/(mpeg|ogg|wav|mp4))$/.test(record.mimeType)
       )
         continue
-      const url = URL.createObjectURL(record.blob)
+      const blob =
+        record.mimeType === 'image/svg+xml'
+          ? new Blob([safeAnkiSvg(await record.blob.text())], { type: record.mimeType })
+          : record.blob
+      const url = URL.createObjectURL(blob)
       next.push(url)
       html = html.replaceAll(`fukushu-media:${id}`, url)
     }
@@ -39,7 +45,10 @@ watch(
     }
     urls.forEach(URL.revokeObjectURL)
     urls = next
-    srcdoc.value = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src blob:; media-src blob:; base-uri 'none'; form-action 'none'"><style>html,body{margin:0;overflow-wrap:anywhere}body{padding:8px;box-sizing:border-box}img{max-width:100%;height:auto}.cloze-blank{display:inline-block;border:1px solid;min-width:3em;text-align:center;line-height:inherit}.cloze-hint{font-size:.7em}${safeAnkiCss(props.css ?? '')}</style></head><body class="card">${html}</body></html>`
+    const content = document.createElement('div')
+    content.innerHTML = html
+    renderCardMath(content)
+    srcdoc.value = `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src blob:; media-src blob:; font-src 'self'; base-uri 'none'; form-action 'none'"><style>${mathCss}html,body{margin:0;overflow-wrap:anywhere}body{padding:8px;box-sizing:border-box}img{max-width:100%;height:auto}.cloze-blank{display:inline-block;border:1px solid;min-width:3em;text-align:center;line-height:inherit}.cloze-hint{font-size:.7em}${safeAnkiCss(props.css ?? '')}</style></head><body class="card">${content.innerHTML}</body></html>`
   },
   { immediate: true },
 )

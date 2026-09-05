@@ -1,0 +1,2491 @@
+{
+  "generatedAt": "2026-09-05T06:42:10.925Z",
+  "commit": "ef94f26039caa3816ba5972b12ea05aa204576fb",
+  "implementation": {
+    "packages/anki-import/src/archive.ts": "e2a778289ea81c7e7c7763bffe3fd3683a08ffddb1ea9ef408698c51a2f01b2d",
+    "packages/anki-import/src/convert.ts": "32070694354d3aa317cc7cfdbc0949a542bf35542b41f7dc86c5c6b848549b55",
+    "packages/anki-import/src/index.ts": "7072d6d7408284ae0ff3e7f2a5030b42e86f75838ecbcc9110c5c853e3c20309",
+    "packages/anki-import/src/parse.ts": "d14c0a7ca77a085a96c601a9185daba86dc0ffcf244acd573e715c62e4f78867",
+    "packages/anki-import/src/safety.ts": "118d39626990e7b7f7d25fdf9c30c03406b9174ab35c0fec4188372ad1d48ba2",
+    "packages/anki-import/src/simplify.ts": "b3ede8cb2441d9a1d9599c7b7d212287cff2f432d2b0e29c9d88f757c38aa967",
+    "packages/anki-import/src/template.ts": "44077eabd5e276f90a6844a3c1895279c2420656beae68798eed83012d4552a5",
+    "packages/anki-import/src/types.ts": "5aa00c81f470295c5f2940d8709721c002164296c660b31be15bc694b95a83c4",
+    "packages/app/src/application/importApkg.ts": "da792077dceeed7185498b0080d510c78203826dcb3a20df586739a674366a00",
+    "packages/app/src/application/apkgStore.ts": "569c9c9dc7a809078db1e93ae85a39e2195dac8a1002c1fb3e21132a5a8c042d",
+    "packages/app/src/components/AnkiFrame.vue": "0d4bc8f8c3bf1ce65e7837d2e34ccb4a6aad8154fa70291129d4632b583a46a2",
+    "packages/app/src/components/ContentRenderer.vue": "97dd4b33470b971aa9d4ef4dc5299fd65fb92f1bb05e21866f2b0397666fc8e2"
+  },
+  "rows": [
+    {
+      "source": {
+        "id": 114060567,
+        "title": "Japanese Core 2000 Step 01 Listening Sentence Vocab + Images",
+        "up": 515,
+        "down": 16,
+        "size": 22873766,
+        "updatedAt": "2015-12-02T00:00:00.000Z",
+        "notes": 400,
+        "audio": 405,
+        "images": 235,
+        "sourceUrl": "https://ankiweb.net/shared/info/114060567",
+        "downloadedAt": "2026-09-05T05:38:53.263Z",
+        "bytes": 22873766,
+        "sha256": "ad12c9a35139368af8ab5d1b24856c1e39fd0adab2d4b961122c4ac48197ceb7",
+        "file": "114060567.apkg"
+      },
+      "library": {
+        "id": "114060567",
+        "source": "https://ankiweb.net/shared/info/114060567",
+        "title": "Japanese Core 2000 Step 01 Listening Sentence Vocab + Images",
+        "up": 515,
+        "down": 16,
+        "bytes": 22873766,
+        "sha256": "ad12c9a35139368af8ab5d1b24856c1e39fd0adab2d4b961122c4ac48197ceb7",
+        "inputCards": 1000,
+        "inputNotes": 400,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 1000,
+        "outputNotes": 400,
+        "media": 641,
+        "native": 0,
+        "template": 1000,
+        "simplifiable": 0,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "78b6401b3dd9584c960f215dd8b2eb21b8a7501b2f8001d1f2f9ed6bf7ac926f",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1253683383517",
+            "key": "i<]t6vwg}2:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683383536",
+            "key": "i<]t6vwg}2:1",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683383563",
+            "key": "i<]t6vwg}2:2",
+            "deckIndex": 0,
+            "cardIndex": 2,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683386863",
+            "key": "s!`t1cFqlF:0",
+            "deckIndex": 0,
+            "cardIndex": 3,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683386882",
+            "key": "s!`t1cFqlF:1",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683391081",
+            "key": "kE[jiS:sp7:0",
+            "deckIndex": 0,
+            "cardIndex": 5,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683391101",
+            "key": "kE[jiS:sp7:1",
+            "deckIndex": 0,
+            "cardIndex": 6,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683391123",
+            "key": "kE[jiS:sp7:2",
+            "deckIndex": 0,
+            "cardIndex": 7,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683394964",
+            "key": "br.x_(7=SJ:0",
+            "deckIndex": 0,
+            "cardIndex": 8,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683394982",
+            "key": "br.x_(7=SJ:1",
+            "deckIndex": 0,
+            "cardIndex": 9,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253684077305",
+            "key": "ebf9E7THF::1",
+            "deckIndex": 0,
+            "cardIndex": 450,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253684264909",
+            "key": "h|z;2kiK^^:1",
+            "deckIndex": 0,
+            "cardIndex": 665,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683495401",
+            "key": "ru/~NI?/(0:1",
+            "deckIndex": 0,
+            "cardIndex": 107,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683415968",
+            "key": "cNzFz~9NU(:1",
+            "deckIndex": 0,
+            "cardIndex": 31,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253684195355",
+            "key": "f.|6Tz]*,j:1",
+            "deckIndex": 0,
+            "cardIndex": 553,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253683592571",
+            "key": "i^3$6R<M$T:0",
+            "deckIndex": 0,
+            "cardIndex": 196,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253684366342",
+            "key": "b7O##~cJp^:0",
+            "deckIndex": 0,
+            "cardIndex": 825,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1253684337364",
+            "key": "t}iSU`NDDu:1",
+            "deckIndex": 0,
+            "cardIndex": 774,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "parsed",
+        "missingInternalReferences": 0,
+        "elapsedMs": 16288
+      },
+      "browser": {
+        "id": "114060567",
+        "sha256": "ad12c9a35139368af8ab5d1b24856c1e39fd0adab2d4b961122c4ac48197ceb7",
+        "samples": [
+          {
+            "id": "1253683383517",
+            "images": [
+              {
+                "internal": true,
+                "loaded": true
+              }
+            ],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 2
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 1000,
+          "studyStates": 1000,
+          "media": 641
+        },
+        "status": "saved",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 1000,
+        "notes": 400,
+        "samples": 18
+      }
+    },
+    {
+      "source": {
+        "id": 2109889812,
+        "title": "Ultimate Geography v5.3",
+        "up": 408,
+        "down": 10,
+        "size": 15094760,
+        "updatedAt": "2025-04-15T18:41:52.000Z",
+        "notes": 319,
+        "audio": 0,
+        "images": 546,
+        "sourceUrl": "https://ankiweb.net/shared/info/2109889812",
+        "downloadedAt": "2026-09-05T05:38:44.096Z",
+        "bytes": 15094760,
+        "sha256": "cd4a2c58ee198711cf1628bb3db29a8940a5637762465e3f981ac7d08440af13",
+        "file": "2109889812.apkg"
+      },
+      "library": {
+        "id": "2109889812",
+        "source": "https://ankiweb.net/shared/info/2109889812",
+        "title": "Ultimate Geography v5.3",
+        "up": 408,
+        "down": 10,
+        "bytes": 15094760,
+        "sha256": "cd4a2c58ee198711cf1628bb3db29a8940a5637762465e3f981ac7d08440af13",
+        "inputCards": 978,
+        "inputNotes": 319,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki21",
+        "outputCards": 978,
+        "outputNotes": 319,
+        "media": 319,
+        "native": 0,
+        "template": 978,
+        "simplifiable": 0,
+        "diagnosticCounts": {
+          "APKG_UNSUPPORTED_MEDIA": 227,
+          "APKG_MISSING_MEDIA": 454
+        },
+        "errorExamples": [],
+        "signature": "91536b79496f94869c951048c35156ea40a7a1a9210e8333987044da7e07a47c",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1708201008371",
+            "key": "e+/O]%*qfk:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008372",
+            "key": "e+/O]%*qfk:1",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008373",
+            "key": "e+/O]%*qfk:2",
+            "deckIndex": 0,
+            "cardIndex": 2,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008374",
+            "key": "e+/O]%*qfk:3",
+            "deckIndex": 0,
+            "cardIndex": 3,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008375",
+            "key": "h~5xz+=ke~:0",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008376",
+            "key": "h~5xz+=ke~:1",
+            "deckIndex": 0,
+            "cardIndex": 5,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008377",
+            "key": "h~5xz+=ke~:2",
+            "deckIndex": 0,
+            "cardIndex": 6,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008378",
+            "key": "h~5xz+=ke~:3",
+            "deckIndex": 0,
+            "cardIndex": 7,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201009008",
+            "key": "q:XyGf#>Wg:3",
+            "deckIndex": 0,
+            "cardIndex": 637,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008922",
+            "key": "e=.VHQ9E+M:1",
+            "deckIndex": 0,
+            "cardIndex": 551,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008672",
+            "key": "pS>DrFhd%u:2",
+            "deckIndex": 0,
+            "cardIndex": 301,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201009143",
+            "key": "r]*Ioa%$bK:3",
+            "deckIndex": 0,
+            "cardIndex": 772,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201009238",
+            "key": "kE!iKHLN_g:0",
+            "deckIndex": 0,
+            "cardIndex": 867,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008813",
+            "key": "sY>@9w~i^p:2",
+            "deckIndex": 0,
+            "cardIndex": 442,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008987",
+            "key": "khB~(m^@Z5:2",
+            "deckIndex": 0,
+            "cardIndex": 616,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1708201008535",
+            "key": "jCd]`-=k,::1",
+            "deckIndex": 0,
+            "cardIndex": 164,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "partial-media",
+        "missingInternalReferences": 0,
+        "elapsedMs": 10910
+      },
+      "browser": {
+        "id": "2109889812",
+        "sha256": "cd4a2c58ee198711cf1628bb3db29a8940a5637762465e3f981ac7d08440af13",
+        "samples": [
+          {
+            "id": "1708201008373",
+            "images": [
+              {
+                "internal": false,
+                "loaded": false
+              },
+              {
+                "internal": false,
+                "loaded": false
+              }
+            ],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0,
+            "typedAnswerVisible": true
+          },
+          {
+            "id": "1708201008374",
+            "images": [
+              {
+                "internal": true,
+                "loaded": true
+              },
+              {
+                "internal": true,
+                "loaded": true
+              }
+            ],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0,
+            "typedAnswerVisible": true
+          },
+          {
+            "id": "1708201008371",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0,
+            "typedAnswerVisible": true
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 978,
+          "studyStates": 978,
+          "media": 319
+        },
+        "status": "visual-differences",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki21",
+        "schema": 11,
+        "cards": 978,
+        "notes": 319,
+        "samples": 16
+      }
+    },
+    {
+      "source": {
+        "id": 2183294427,
+        "title": "Japanese Basic Hiragana",
+        "up": 419,
+        "down": 17,
+        "size": 353086,
+        "updatedAt": "2013-11-11T00:00:00.000Z",
+        "notes": 46,
+        "audio": 46,
+        "images": 0,
+        "sourceUrl": "https://ankiweb.net/shared/info/2183294427",
+        "downloadedAt": "2026-09-05T05:38:57.678Z",
+        "bytes": 353086,
+        "sha256": "a219bce22aea58b3fee75f2fae6fd21784667ad4671236777e4c075e753a75c0",
+        "file": "2183294427.apkg"
+      },
+      "library": {
+        "id": "2183294427",
+        "source": "https://ankiweb.net/shared/info/2183294427",
+        "title": "Japanese Basic Hiragana",
+        "up": 419,
+        "down": 17,
+        "bytes": 353086,
+        "sha256": "a219bce22aea58b3fee75f2fae6fd21784667ad4671236777e4c075e753a75c0",
+        "inputCards": 46,
+        "inputNotes": 46,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 46,
+        "outputNotes": 46,
+        "media": 46,
+        "native": 0,
+        "template": 46,
+        "simplifiable": 46,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "4dda58f49c2fed5997d29662fcc80898afd2755d6f2814d5b7064e9ad5139695",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1296169988801",
+            "key": "h8tkCSgO9w:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296169993713",
+            "key": "kyJvd>$Mv#:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296170010342",
+            "key": "i#eI?~#gX9:0",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296170182854",
+            "key": "ho0zKdcDyV:0",
+            "deckIndex": 0,
+            "cardIndex": 8,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296170667520",
+            "key": "zVgnqG,#::0",
+            "deckIndex": 0,
+            "cardIndex": 13,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296171737661",
+            "key": "k?f9m;vI{B:0",
+            "deckIndex": 0,
+            "cardIndex": 44,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296171733498",
+            "key": "f|KFZBp?cJ:0",
+            "deckIndex": 0,
+            "cardIndex": 43,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296170171483",
+            "key": "nQu@wT)K[+:0",
+            "deckIndex": 0,
+            "cardIndex": 6,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1296171724911",
+            "key": "uT{R_$!u4L:0",
+            "deckIndex": 0,
+            "cardIndex": 40,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          }
+        ],
+        "status": "render-differences",
+        "missingInternalReferences": 0,
+        "elapsedMs": 526
+      },
+      "browser": {
+        "id": "2183294427",
+        "sha256": "a219bce22aea58b3fee75f2fae6fd21784667ad4671236777e4c075e753a75c0",
+        "samples": [
+          {
+            "id": "1296169988801",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0,
+            "typedAnswerVisible": false
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 46,
+          "studyStates": 46,
+          "media": 46
+        },
+        "status": "visual-differences",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 46,
+        "notes": 46,
+        "samples": 9
+      }
+    },
+    {
+      "source": {
+        "id": "astrophysics",
+        "title": "Comprehensive astrophysics",
+        "sourceUrl": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2Fcomprehensive_astrophysics.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/MilesCranmer/anki_science/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2Fcomprehensive_astrophysics.apkg",
+        "repository": "MilesCranmer/anki_science",
+        "repositoryStars": 254,
+        "commit": "741ad890a49c60573394e606b5972de8b7fe38da",
+        "downloadedAt": "2026-09-05T05:58:07.634Z",
+        "bytes": 66893,
+        "sha256": "2aaf51800c11693d309f04043727350478f23ce8427a6ba2e3075c668d9156fc",
+        "file": "astrophysics.apkg"
+      },
+      "library": {
+        "id": "astrophysics",
+        "source": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2Fcomprehensive_astrophysics.apkg",
+        "title": "Comprehensive astrophysics",
+        "repositoryStars": 254,
+        "bytes": 66893,
+        "sha256": "2aaf51800c11693d309f04043727350478f23ce8427a6ba2e3075c668d9156fc",
+        "inputCards": 321,
+        "inputNotes": 321,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 321,
+        "outputNotes": 321,
+        "media": 0,
+        "native": 0,
+        "template": 321,
+        "simplifiable": 321,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "5676b3920930cafbede5b2342cfae9d24547db555ca7352b8e6139cec37e805d",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1590643886671",
+            "key": "ubK4/RZ.B6:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886672",
+            "key": "cl=?YCl,/~:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886811",
+            "key": "p8OX:.,wT`:0",
+            "deckIndex": 0,
+            "cardIndex": 140,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886844",
+            "key": "nu*ot[/UWD:0",
+            "deckIndex": 0,
+            "cardIndex": 173,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886863",
+            "key": "ESk[*U3{J(:0",
+            "deckIndex": 0,
+            "cardIndex": 192,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886951",
+            "key": "H%zuF8)$#G:0",
+            "deckIndex": 0,
+            "cardIndex": 280,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886943",
+            "key": "D}K1U+@>,J:0",
+            "deckIndex": 0,
+            "cardIndex": 272,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886937",
+            "key": "y}s&N+.NdA:0",
+            "deckIndex": 0,
+            "cardIndex": 266,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886954",
+            "key": "kSG?m)&E7$:0",
+            "deckIndex": 0,
+            "cardIndex": 283,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1590643886854",
+            "key": "N=)y6e^US~:0",
+            "deckIndex": 0,
+            "cardIndex": 183,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "parsed",
+        "missingInternalReferences": 0,
+        "elapsedMs": 2127
+      },
+      "browser": {
+        "id": "astrophysics",
+        "sha256": "2aaf51800c11693d309f04043727350478f23ce8427a6ba2e3075c668d9156fc",
+        "samples": [
+          {
+            "id": "1590643886671",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 321,
+          "studyStates": 321,
+          "media": 0
+        },
+        "status": "saved",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 321,
+        "notes": 321,
+        "samples": 10
+      }
+    },
+    {
+      "source": {
+        "id": "bayesian",
+        "title": "Bayesian statistics",
+        "sourceUrl": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FBayesian_Statistics.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/MilesCranmer/anki_science/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FBayesian_Statistics.apkg",
+        "repository": "MilesCranmer/anki_science",
+        "repositoryStars": 254,
+        "commit": "741ad890a49c60573394e606b5972de8b7fe38da",
+        "downloadedAt": "2026-09-05T05:58:06.794Z",
+        "bytes": 236569,
+        "sha256": "cf8bc006fc54aeb56cdfcbc22130d8c31427d1c7e9375579cef711707ba6305c",
+        "file": "bayesian.apkg"
+      },
+      "library": {
+        "id": "bayesian",
+        "source": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FBayesian_Statistics.apkg",
+        "title": "Bayesian statistics",
+        "repositoryStars": 254,
+        "bytes": 236569,
+        "sha256": "cf8bc006fc54aeb56cdfcbc22130d8c31427d1c7e9375579cef711707ba6305c",
+        "inputCards": 48,
+        "inputNotes": 48,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 48,
+        "outputNotes": 48,
+        "media": 142,
+        "native": 0,
+        "template": 48,
+        "simplifiable": 48,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "95e707f901a11fa0b023837b964d687e0b2dabbb91af415e0891e8e2f43d9c4f",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1494661619189",
+            "key": "f9FWTM-oXS:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494661896187",
+            "key": "wu/&|0?0o6:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1494817356879",
+            "key": "vD+9SC$!=>:0",
+            "deckIndex": 0,
+            "cardIndex": 26,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494662175847",
+            "key": "i}*At_!L_%:0",
+            "deckIndex": 0,
+            "cardIndex": 2,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494816708770",
+            "key": "Ak+1nnyz|n:0",
+            "deckIndex": 0,
+            "cardIndex": 23,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494816938346",
+            "key": "pm&xc:1.tC:0",
+            "deckIndex": 0,
+            "cardIndex": 24,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494665564124",
+            "key": "pfDUz)_B6h:0",
+            "deckIndex": 0,
+            "cardIndex": 5,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494911632786",
+            "key": "DJNmgij3MD:0",
+            "deckIndex": 0,
+            "cardIndex": 46,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1494824847318",
+            "key": "h,N6N>lqEB:0",
+            "deckIndex": 0,
+            "cardIndex": 35,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          }
+        ],
+        "status": "render-differences",
+        "missingInternalReferences": 0,
+        "elapsedMs": 410
+      },
+      "browser": {
+        "id": "bayesian",
+        "sha256": "cf8bc006fc54aeb56cdfcbc22130d8c31427d1c7e9375579cef711707ba6305c",
+        "samples": [
+          {
+            "id": "1494661619189",
+            "images": [],
+            "rawMath": true,
+            "katex": 3,
+            "audio": 0,
+            "typedAnswerVisible": true
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 48,
+          "studyStates": 48,
+          "media": 142
+        },
+        "status": "visual-differences",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 48,
+        "notes": 48,
+        "samples": 9
+      }
+    },
+    {
+      "source": {
+        "id": "coding-combined",
+        "title": "Coding Flashcards: six languages",
+        "sourceUrl": "https://github.com/ad-si/Coding-Flashcards/releases/tag/v1.2.0",
+        "downloadUrl": "https://github.com/ad-si/Coding-Flashcards/releases/download/v1.2.0/cards-combined.apkg",
+        "repository": "ad-si/Coding-Flashcards",
+        "repositoryStars": 756,
+        "tag": "v1.2.0",
+        "downloadedAt": "2026-09-05T05:58:09.880Z",
+        "bytes": 494268,
+        "sha256": "59ec7005cd91fee1aba06a3fe18fa5baebec2ae237320b231f976fed3718fe38",
+        "file": "coding-combined.apkg"
+      },
+      "library": {
+        "id": "coding-combined",
+        "source": "https://github.com/ad-si/Coding-Flashcards/releases/tag/v1.2.0",
+        "title": "Coding Flashcards: six languages",
+        "repositoryStars": 756,
+        "bytes": 494268,
+        "sha256": "59ec7005cd91fee1aba06a3fe18fa5baebec2ae237320b231f976fed3718fe38",
+        "inputCards": 1027,
+        "inputNotes": 1027,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 1,
+        "format": "anki2",
+        "outputCards": 1027,
+        "outputNotes": 1027,
+        "media": 8,
+        "native": 0,
+        "template": 1027,
+        "simplifiable": 0,
+        "diagnosticCounts": {
+          "APKG_UNSUPPORTED_TEMPLATE": 3
+        },
+        "errorExamples": [],
+        "signature": "30b176d648790864ba43532bd235d9a0af824fa1f4303071d7737e8dd2f9faf5",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "17785920551282",
+            "key": "m$d$k<acvm:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920551306",
+            "key": "RV(,zPN_Tq:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920551453",
+            "key": ">3l/aXUJkt:0",
+            "deckIndex": 0,
+            "cardIndex": 10,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920551537",
+            "key": "5D%M/8<pok:0",
+            "deckIndex": 0,
+            "cardIndex": 15,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920552475",
+            "key": "a4pQ]$Z:mm:0",
+            "deckIndex": 0,
+            "cardIndex": 62,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920561350",
+            "key": "[$1e1{jFij:0",
+            "deckIndex": 0,
+            "cardIndex": 511,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920554834",
+            "key": "7MHpgQcg+s:0",
+            "deckIndex": 0,
+            "cardIndex": 155,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920555912",
+            "key": ".dhKrs`x8r:0",
+            "deckIndex": 0,
+            "cardIndex": 201,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920567557",
+            "key": "-=Xd):EL1d:0",
+            "deckIndex": 0,
+            "cardIndex": 916,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920563636",
+            "key": "^h.%>SAw3s:0",
+            "deckIndex": 0,
+            "cardIndex": 675,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920567476",
+            "key": "/sz-gin0bl:0",
+            "deckIndex": 0,
+            "cardIndex": 909,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920564561",
+            "key": "x2:<.)kvPk:0",
+            "deckIndex": 0,
+            "cardIndex": 729,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920566124",
+            "key": "fIG#9=A6id:0",
+            "deckIndex": 0,
+            "cardIndex": 812,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "17785920561327",
+            "key": ">I9FFo?{nt:0",
+            "deckIndex": 0,
+            "cardIndex": 509,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "duplicate-card-keys",
+        "missingInternalReferences": 0,
+        "elapsedMs": 23069
+      },
+      "browser": {
+        "id": "coding-combined",
+        "sha256": "59ec7005cd91fee1aba06a3fe18fa5baebec2ae237320b231f976fed3718fe38",
+        "samples": [
+          {
+            "id": "17785920551537",
+            "images": [],
+            "rawMath": true,
+            "katex": 0,
+            "audio": 0
+          },
+          {
+            "id": "17785920561350",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0
+          },
+          {
+            "id": "17785920552475",
+            "images": [
+              {
+                "internal": true,
+                "loaded": true
+              }
+            ],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0
+          },
+          {
+            "id": "17785920551282",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0
+          }
+        ],
+        "saveEnabled": true,
+        "status": "save-error",
+        "error": ["Error: 取込カードキーが重複しています。"]
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 1027,
+        "notes": 1027,
+        "nativeImportCards": 1027,
+        "samples": 14
+      }
+    },
+    {
+      "source": {
+        "id": "eth-ml",
+        "title": "ETH Machine Learning",
+        "sourceUrl": "https://github.com/taivop/anki-decks/blob/df9cbeaa3f343e160f1046f97da3cc5b47b57610/ETH%20Machine%20Learning.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/taivop/anki-decks/df9cbeaa3f343e160f1046f97da3cc5b47b57610/ETH%20Machine%20Learning.apkg",
+        "repository": "taivop/anki-decks",
+        "repositoryStars": 256,
+        "commit": "df9cbeaa3f343e160f1046f97da3cc5b47b57610",
+        "downloadedAt": "2026-09-05T05:58:08.447Z",
+        "bytes": 166915,
+        "sha256": "934d2f8c495b524891ae379b66f405390101736f2516be36215fbef63015d637",
+        "file": "eth-ml.apkg"
+      },
+      "library": {
+        "id": "eth-ml",
+        "source": "https://github.com/taivop/anki-decks/blob/df9cbeaa3f343e160f1046f97da3cc5b47b57610/ETH%20Machine%20Learning.apkg",
+        "title": "ETH Machine Learning",
+        "repositoryStars": 256,
+        "bytes": 166915,
+        "sha256": "934d2f8c495b524891ae379b66f405390101736f2516be36215fbef63015d637",
+        "inputCards": 50,
+        "inputNotes": 46,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 50,
+        "outputNotes": 46,
+        "media": 68,
+        "native": 0,
+        "template": 50,
+        "simplifiable": 44,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "968b239c4e9d46a1525d039161b822d4bfdf0710c2d90cd623ea414dc3e6fa17",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1452450198185",
+            "key": "s`F7_dBF,v:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452450357345",
+            "key": "v@0qLXvK9>:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452587364380",
+            "key": "g[P}}C1Cb{:0",
+            "deckIndex": 0,
+            "cardIndex": 19,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452587364381",
+            "key": "g[P}}C1Cb{:1",
+            "deckIndex": 0,
+            "cardIndex": 20,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452593711674",
+            "key": "zl-t]]5/r7:0",
+            "deckIndex": 0,
+            "cardIndex": 27,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452593711675",
+            "key": "zl-t]]5/r7:1",
+            "deckIndex": 0,
+            "cardIndex": 28,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452593711676",
+            "key": "zl-t]]5/r7:2",
+            "deckIndex": 0,
+            "cardIndex": 29,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452593852111",
+            "key": "lK$3#EN%F_:0",
+            "deckIndex": 0,
+            "cardIndex": 30,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452607004014",
+            "key": "I62-f~ZId/:0",
+            "deckIndex": 0,
+            "cardIndex": 34,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452607004015",
+            "key": "I62-f~ZId/:1",
+            "deckIndex": 0,
+            "cardIndex": 35,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452587262483",
+            "key": "Q~ceC!cLFE:0",
+            "deckIndex": 0,
+            "cardIndex": 18,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452683453627",
+            "key": "gySdZ#h6qt:0",
+            "deckIndex": 0,
+            "cardIndex": 46,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452451464092",
+            "key": "Pbnpl$;scu:0",
+            "deckIndex": 0,
+            "cardIndex": 8,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452499625964",
+            "key": "eMaC92Q6*e:0",
+            "deckIndex": 0,
+            "cardIndex": 10,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1452450903641",
+            "key": "Mz$u7!wu?T:0",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1452604585985",
+            "key": "d[d#xt#:dI:0",
+            "deckIndex": 0,
+            "cardIndex": 32,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "render-differences",
+        "missingInternalReferences": 0,
+        "elapsedMs": 455
+      },
+      "browser": {
+        "id": "eth-ml",
+        "sha256": "934d2f8c495b524891ae379b66f405390101736f2516be36215fbef63015d637",
+        "samples": [
+          {
+            "id": "1452450198185",
+            "images": [],
+            "rawMath": true,
+            "katex": 0,
+            "audio": 0
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 50,
+          "studyStates": 50,
+          "media": 68
+        },
+        "status": "visual-differences",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 50,
+        "notes": 46,
+        "samples": 16
+      }
+    },
+    {
+      "source": {
+        "id": "formulate-knowledge",
+        "title": "How to formulate knowledge",
+        "sourceUrl": "https://github.com/taivop/anki-decks/blob/df9cbeaa3f343e160f1046f97da3cc5b47b57610/How-to-Formulate-Knowledge.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/taivop/anki-decks/df9cbeaa3f343e160f1046f97da3cc5b47b57610/How-to-Formulate-Knowledge.apkg",
+        "repository": "taivop/anki-decks",
+        "repositoryStars": 256,
+        "commit": "df9cbeaa3f343e160f1046f97da3cc5b47b57610",
+        "downloadedAt": "2026-09-05T05:58:08.653Z",
+        "bytes": 23171,
+        "sha256": "474d22f9bd9eb08407870997a8fcbd99f9cdc4a51ca23084059617b1bd855766",
+        "file": "formulate-knowledge.apkg"
+      },
+      "library": {
+        "id": "formulate-knowledge",
+        "source": "https://github.com/taivop/anki-decks/blob/df9cbeaa3f343e160f1046f97da3cc5b47b57610/How-to-Formulate-Knowledge.apkg",
+        "title": "How to formulate knowledge",
+        "repositoryStars": 256,
+        "bytes": 23171,
+        "sha256": "474d22f9bd9eb08407870997a8fcbd99f9cdc4a51ca23084059617b1bd855766",
+        "inputCards": 141,
+        "inputNotes": 141,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 141,
+        "outputNotes": 141,
+        "media": 0,
+        "native": 0,
+        "template": 141,
+        "simplifiable": 141,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "14509ad956478a5ca5e441b03377ba9299d0671e2196d7dd4a97c64627558afa",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1333726380517",
+            "key": "r<KpfoaCC-:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333726414469",
+            "key": "cT[)_m||m=:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333731019286",
+            "key": "t7AJ~u@/:l:0",
+            "deckIndex": 0,
+            "cardIndex": 120,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333729772508",
+            "key": "e%*uj1`>H::0",
+            "deckIndex": 0,
+            "cardIndex": 89,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333728935641",
+            "key": "lY_)6ah^Qs:0",
+            "deckIndex": 0,
+            "cardIndex": 55,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333730482005",
+            "key": "i65W`7?ULY:0",
+            "deckIndex": 0,
+            "cardIndex": 106,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333731295103",
+            "key": "d%KAQn^F:x:0",
+            "deckIndex": 0,
+            "cardIndex": 128,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333729510610",
+            "key": "tjvU803TgU:0",
+            "deckIndex": 0,
+            "cardIndex": 80,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333729181360",
+            "key": "uT8hd[OiKp:0",
+            "deckIndex": 0,
+            "cardIndex": 65,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1333730988626",
+            "key": "vH-)w/]itC:0",
+            "deckIndex": 0,
+            "cardIndex": 119,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "parsed",
+        "missingInternalReferences": 0,
+        "elapsedMs": 1250
+      },
+      "browser": {
+        "id": "formulate-knowledge",
+        "sha256": "474d22f9bd9eb08407870997a8fcbd99f9cdc4a51ca23084059617b1bd855766",
+        "samples": [
+          {
+            "id": "1333726380517",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 0
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 141,
+          "studyStates": 141,
+          "media": 0
+        },
+        "status": "saved",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 141,
+        "notes": 141,
+        "samples": 10
+      }
+    },
+    {
+      "source": {
+        "id": "goethe-a1",
+        "title": "German A1 vocabulary: text and audio",
+        "sourceUrl": "https://github.com/patsytau/anki_german_a1_vocab/blob/438029b7b5922a913a03b7a1bc873ff6ac000e4f/Goethe-Institute-A1-Wordlist.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/patsytau/anki_german_a1_vocab/438029b7b5922a913a03b7a1bc873ff6ac000e4f/Goethe-Institute-A1-Wordlist.apkg",
+        "repository": "patsytau/anki_german_a1_vocab",
+        "repositoryStars": 231,
+        "commit": "438029b7b5922a913a03b7a1bc873ff6ac000e4f",
+        "downloadedAt": "2026-09-05T05:58:05.937Z",
+        "bytes": 13516449,
+        "sha256": "7c43359e531e67e43d86124a96d45874b696f70adc5092ecf14567a3b92f0b03",
+        "file": "goethe-a1.apkg"
+      },
+      "library": {
+        "id": "goethe-a1",
+        "source": "https://github.com/patsytau/anki_german_a1_vocab/blob/438029b7b5922a913a03b7a1bc873ff6ac000e4f/Goethe-Institute-A1-Wordlist.apkg",
+        "title": "German A1 vocabulary: text and audio",
+        "repositoryStars": 231,
+        "bytes": 13516449,
+        "sha256": "7c43359e531e67e43d86124a96d45874b696f70adc5092ecf14567a3b92f0b03",
+        "inputCards": 926,
+        "inputNotes": 926,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 926,
+        "outputNotes": 926,
+        "media": 801,
+        "native": 0,
+        "template": 926,
+        "simplifiable": 112,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "2ed379e06895172b0ef82e59a85e6ad06f754f53966daac999b9f5c2261a2b20",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1718781037089",
+            "key": "!!DsKeFMD:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781037091",
+            "key": "L,L%X7?toS:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781037603",
+            "key": "K]jU{B3Ua(:0",
+            "deckIndex": 0,
+            "cardIndex": 257,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038591",
+            "key": "J5#;gK)X{x:0",
+            "deckIndex": 0,
+            "cardIndex": 751,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038715",
+            "key": "MhZKR)v=1;:0",
+            "deckIndex": 0,
+            "cardIndex": 813,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038299",
+            "key": "KZ~zW!gP-):0",
+            "deckIndex": 0,
+            "cardIndex": 605,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038053",
+            "key": "o(z1hMZ4w+:0",
+            "deckIndex": 0,
+            "cardIndex": 482,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038769",
+            "key": "NyJ0>OE-[r:0",
+            "deckIndex": 0,
+            "cardIndex": 840,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781037163",
+            "key": "b9:#O-@c>2:0",
+            "deckIndex": 0,
+            "cardIndex": 37,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          },
+          {
+            "id": "1718781038779",
+            "key": "EBAg:JVv2J:0",
+            "deckIndex": 0,
+            "cardIndex": 845,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": true
+          }
+        ],
+        "status": "parsed",
+        "missingInternalReferences": 0,
+        "elapsedMs": 11591
+      },
+      "browser": {
+        "id": "goethe-a1",
+        "sha256": "7c43359e531e67e43d86124a96d45874b696f70adc5092ecf14567a3b92f0b03",
+        "samples": [
+          {
+            "id": "1718781037089",
+            "images": [],
+            "rawMath": false,
+            "katex": 0,
+            "audio": 2
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 926,
+          "studyStates": 926,
+          "media": 801
+        },
+        "status": "saved",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 926,
+        "notes": 926,
+        "samples": 10
+      }
+    },
+    {
+      "source": {
+        "id": "kaishi-1.5k",
+        "title": "Kaishi 1.5k",
+        "sourceUrl": "https://github.com/donkuri/kaishi/releases/tag/v2.4.2",
+        "downloadUrl": "https://github.com/donkuri/kaishi/releases/download/v2.4.2/Kaishi.1.5k.apkg",
+        "repository": "donkuri/kaishi",
+        "repositoryStars": 1489,
+        "tag": "v2.4.2",
+        "downloadedAt": "2026-09-05T05:58:20.803Z",
+        "bytes": 108690108,
+        "sha256": "9a3da60472d940f4a63d79882bb06aa34da8a3ea057d14079668e754c58a22fc",
+        "file": "kaishi-1.5k.apkg"
+      },
+      "library": {
+        "id": "kaishi-1.5k",
+        "source": "https://github.com/donkuri/kaishi/releases/tag/v2.4.2",
+        "title": "Kaishi 1.5k",
+        "repositoryStars": 1489,
+        "bytes": 108690108,
+        "sha256": "9a3da60472d940f4a63d79882bb06aa34da8a3ea057d14079668e754c58a22fc",
+        "inputCards": 1501,
+        "inputNotes": 1501,
+        "schema": 18,
+        "capacityOverride": ["archive"],
+        "duplicateCardKeys": 0,
+        "format": "21b",
+        "outputCards": 1501,
+        "outputNotes": 1501,
+        "media": 4345,
+        "native": 0,
+        "template": 1501,
+        "simplifiable": 0,
+        "diagnosticCounts": {
+          "APKG_UNSUPPORTED_TEMPLATE": 4503
+        },
+        "errorExamples": [
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "Ke[$Fd_Z1R:0",
+              "cardId": "1708637439853"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "Ke[$Fd_Z1R:0",
+              "cardId": "1708637439853"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "ue*r{>Er!]:0",
+              "cardId": "1708637439854"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "ue*r{>Er!]:0",
+              "cardId": "1708637439854"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "N*bTdF#y|q:0",
+              "cardId": "1708637439855"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "N*bTdF#y|q:0",
+              "cardId": "1708637439855"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "l^^i5RVwq@:0",
+              "cardId": "1708637439856"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未対応フィルター: furigana",
+            "severity": "error",
+            "card": {
+              "deckId": "1710244071681",
+              "key": "l^^i5RVwq@:0",
+              "cardId": "1708637439856"
+            }
+          }
+        ],
+        "signature": "a40f4e9e392290eaedbb54ec0442f045af64da60d05612d5abaa40e3ff2195c1",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1708637439853",
+            "key": "Ke[$Fd_Z1R:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637439854",
+            "key": "ue*r{>Er!]:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440915",
+            "key": "PLV>=WR5%6:0",
+            "deckIndex": 0,
+            "cardIndex": 1062,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440402",
+            "key": "I7hoegsq&n:0",
+            "deckIndex": 0,
+            "cardIndex": 549,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440887",
+            "key": "H#&(<*Xy`~:0",
+            "deckIndex": 0,
+            "cardIndex": 1034,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637441040",
+            "key": "xlTN%COhi=:0",
+            "deckIndex": 0,
+            "cardIndex": 1187,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440888",
+            "key": "Lgs+FTH-(v:0",
+            "deckIndex": 0,
+            "cardIndex": 1035,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440746",
+            "key": "J?lplo>xoE:0",
+            "deckIndex": 0,
+            "cardIndex": 893,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440956",
+            "key": "FSk0+h0N8_:0",
+            "deckIndex": 0,
+            "cardIndex": 1103,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          },
+          {
+            "id": "1708637440279",
+            "key": "Hao3M2uzk~:0",
+            "deckIndex": 0,
+            "cardIndex": 426,
+            "found": true,
+            "frontTextEqual": true,
+            "backTextEqual": false
+          }
+        ],
+        "status": "blocked-diagnostics",
+        "missingInternalReferences": 0,
+        "elapsedMs": 33224
+      },
+      "browser": {
+        "id": "kaishi-1.5k",
+        "sha256": "9a3da60472d940f4a63d79882bb06aa34da8a3ea057d14079668e754c58a22fc",
+        "samples": [],
+        "status": "capacity-excluded"
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki21b",
+        "schema": 18,
+        "cards": 1501,
+        "notes": 1501,
+        "samples": 10
+      }
+    },
+    {
+      "source": {
+        "id": "physics-gre",
+        "title": "Physics GRE",
+        "sourceUrl": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2FPhysics_GRE.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/MilesCranmer/anki_science/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2FPhysics_GRE.apkg",
+        "repository": "MilesCranmer/anki_science",
+        "repositoryStars": 254,
+        "commit": "741ad890a49c60573394e606b5972de8b7fe38da",
+        "downloadedAt": "2026-09-05T05:58:07.411Z",
+        "bytes": 1000821,
+        "sha256": "8b781843cf2037629742b3b111c4772cce630ac56a928acce2a6751a52dea055",
+        "file": "physics-gre.apkg"
+      },
+      "library": {
+        "id": "physics-gre",
+        "source": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/physics_and_astronomy%2FPhysics_GRE.apkg",
+        "title": "Physics GRE",
+        "repositoryStars": 254,
+        "bytes": 1000821,
+        "sha256": "8b781843cf2037629742b3b111c4772cce630ac56a928acce2a6751a52dea055",
+        "inputCards": 108,
+        "inputNotes": 108,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 0,
+        "format": "anki2",
+        "outputCards": 108,
+        "outputNotes": 108,
+        "media": 254,
+        "native": 0,
+        "template": 108,
+        "simplifiable": 105,
+        "diagnosticCounts": {},
+        "errorExamples": [],
+        "signature": "f6e940402b09105873ce9da1098dee16faf40e481eac4d34fab941c83bbccdc4",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1394674033762",
+            "key": "NEQK9HRC3-:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1394674160365",
+            "key": "IoO?d5;NG?:0",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1394674349491",
+            "key": "seD,c/&H/M:0",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1395635469840",
+            "key": "c#OS(fRmLo:0",
+            "deckIndex": 0,
+            "cardIndex": 25,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1413943727407",
+            "key": "Lw;o.7eX*#:0",
+            "deckIndex": 0,
+            "cardIndex": 93,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1396587005737",
+            "key": "Q1?!dcJhE@:0",
+            "deckIndex": 0,
+            "cardIndex": 73,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1396578652019",
+            "key": "A+S7w97kgQ:0",
+            "deckIndex": 0,
+            "cardIndex": 66,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1395763963257",
+            "key": "l^7L2BP!k_:0",
+            "deckIndex": 0,
+            "cardIndex": 35,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1412636565070",
+            "key": "xT@A>`y.4V:0",
+            "deckIndex": 0,
+            "cardIndex": 84,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1414001419462",
+            "key": "ky;hv$ypo+:0",
+            "deckIndex": 0,
+            "cardIndex": 101,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1394780742069",
+            "key": "M_Be9k%2hh:0",
+            "deckIndex": 0,
+            "cardIndex": 16,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          }
+        ],
+        "status": "render-differences",
+        "missingInternalReferences": 0,
+        "elapsedMs": 1087
+      },
+      "browser": {
+        "id": "physics-gre",
+        "sha256": "8b781843cf2037629742b3b111c4772cce630ac56a928acce2a6751a52dea055",
+        "samples": [
+          {
+            "id": "1394674033762",
+            "images": [],
+            "rawMath": true,
+            "katex": 0,
+            "audio": 0
+          }
+        ],
+        "saveEnabled": true,
+        "saved": true,
+        "stored": {
+          "questions": 108,
+          "studyStates": 108,
+          "media": 254
+        },
+        "status": "visual-differences",
+        "externalOrigins": []
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 108,
+        "notes": 108,
+        "samples": 11
+      }
+    },
+    {
+      "source": {
+        "id": "probability",
+        "title": "Probability theory and mathematical statistics",
+        "sourceUrl": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FProbability_Theory_and_Mathematical_Statistics.apkg",
+        "downloadUrl": "https://raw.githubusercontent.com/MilesCranmer/anki_science/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FProbability_Theory_and_Mathematical_Statistics.apkg",
+        "repository": "MilesCranmer/anki_science",
+        "repositoryStars": 254,
+        "commit": "741ad890a49c60573394e606b5972de8b7fe38da",
+        "downloadedAt": "2026-09-05T05:58:07.053Z",
+        "bytes": 178983,
+        "sha256": "fc8966e220a4cb4477ac0df6ab38b89785da138b74a0f1715f8a26cbf51daafb",
+        "file": "probability.apkg"
+      },
+      "library": {
+        "id": "probability",
+        "source": "https://github.com/MilesCranmer/anki_science/blob/741ad890a49c60573394e606b5972de8b7fe38da/math_ml_statistics%2FProbability_Theory_and_Mathematical_Statistics.apkg",
+        "title": "Probability theory and mathematical statistics",
+        "repositoryStars": 254,
+        "bytes": 178983,
+        "sha256": "fc8966e220a4cb4477ac0df6ab38b89785da138b74a0f1715f8a26cbf51daafb",
+        "inputCards": 413,
+        "inputNotes": 254,
+        "schema": 11,
+        "capacityOverride": [],
+        "duplicateCardKeys": 2,
+        "format": "anki2",
+        "outputCards": 413,
+        "outputNotes": 254,
+        "media": 2,
+        "native": 0,
+        "template": 413,
+        "simplifiable": 17,
+        "diagnosticCounts": {
+          "APKG_UNSUPPORTED_TEMPLATE": 1221
+        },
+        "errorExamples": [
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:0",
+              "cardId": "1540000768847"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:0",
+              "cardId": "1540000768847"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:1",
+              "cardId": "1540000768849"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:1",
+              "cardId": "1540000768849"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:2",
+              "cardId": "1540000768850"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "G9w1;@]^nc:2",
+              "cardId": "1540000768850"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "kw.X{@+uEW:0",
+              "cardId": "1540000858996"
+            }
+          },
+          {
+            "code": "APKG_UNSUPPORTED_TEMPLATE",
+            "message": "未定義フィールド: Subdeck",
+            "severity": "error",
+            "card": {
+              "deckId": "1540190246618",
+              "key": "kw.X{@+uEW:0",
+              "cardId": "1540000858996"
+            }
+          }
+        ],
+        "signature": "b687b4d2b5007d6d35e747e095d96ecc95bcd749c7d4158f36778d93f3dcf2ee",
+        "reproducible": true,
+        "samples": [
+          {
+            "id": "1540000768847",
+            "key": "G9w1;@]^nc:0",
+            "deckIndex": 0,
+            "cardIndex": 0,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540000768849",
+            "key": "G9w1;@]^nc:1",
+            "deckIndex": 0,
+            "cardIndex": 1,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540000768850",
+            "key": "G9w1;@]^nc:2",
+            "deckIndex": 0,
+            "cardIndex": 2,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540000858996",
+            "key": "kw.X{@+uEW:0",
+            "deckIndex": 0,
+            "cardIndex": 3,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540000858997",
+            "key": "kw.X{@+uEW:1",
+            "deckIndex": 0,
+            "cardIndex": 4,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540000858998",
+            "key": "kw.X{@+uEW:2",
+            "deckIndex": 0,
+            "cardIndex": 5,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1542506453113",
+            "key": "vm9-eEM!#}:0",
+            "deckIndex": 0,
+            "cardIndex": 121,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1548300124943",
+            "key": "EPu`LKcs5U:3",
+            "deckIndex": 0,
+            "cardIndex": 144,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1557524775640",
+            "key": "BsGoa7]PO):0",
+            "deckIndex": 0,
+            "cardIndex": 148,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1557711632343",
+            "key": "i2iNfo3fHM:3",
+            "deckIndex": 0,
+            "cardIndex": 225,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1557603327299",
+            "key": "nW_^@tQOch:0",
+            "deckIndex": 0,
+            "cardIndex": 201,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540180033906",
+            "key": "gZT:$g+Q^}:0",
+            "deckIndex": 0,
+            "cardIndex": 63,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1558747570731",
+            "key": "p(T%rE|t6A:1",
+            "deckIndex": 0,
+            "cardIndex": 337,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1557608689542",
+            "key": "L~OBzr~`bi:1",
+            "deckIndex": 0,
+            "cardIndex": 210,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1548724833562",
+            "key": "PuQd6:0",
+            "deckIndex": 0,
+            "cardIndex": 145,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1557721874693",
+            "key": "L!3j/SL{Or:0",
+            "deckIndex": 0,
+            "cardIndex": 234,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1569339200461",
+            "key": ".n?a1:0",
+            "deckIndex": 0,
+            "cardIndex": 396,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540332999950",
+            "key": "s81!|@RupH:1",
+            "deckIndex": 0,
+            "cardIndex": 78,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          },
+          {
+            "id": "1540332624073",
+            "key": "JOIC#2m*<%:1",
+            "deckIndex": 0,
+            "cardIndex": 76,
+            "found": true,
+            "frontTextEqual": false,
+            "backTextEqual": false
+          }
+        ],
+        "status": "duplicate-card-keys",
+        "missingInternalReferences": 0,
+        "elapsedMs": 5026
+      },
+      "browser": {
+        "id": "probability",
+        "sha256": "fc8966e220a4cb4477ac0df6ab38b89785da138b74a0f1715f8a26cbf51daafb",
+        "samples": [],
+        "saveEnabled": false,
+        "status": "blocked-diagnostics"
+      },
+      "oracle": {
+        "version": "25.9",
+        "collection": "collection.anki2",
+        "schema": 11,
+        "cards": 413,
+        "notes": 254,
+        "samples": 19
+      }
+    }
+  ]
+}

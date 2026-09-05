@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
-import renderMathInElement from 'katex/contrib/auto-render'
+import { renderCardMath } from '../utils/renderMath'
 import 'katex/dist/katex.min.css'
 import { marked } from 'marked'
 import type { QuizContent } from '../domain/quiz/types'
@@ -36,15 +36,7 @@ const html = computed(() => {
       media.replaceWith(replacement)
     }
   }
-  renderMathInElement(element, {
-    delimiters: [
-      { left: '\\[', right: '\\]', display: true },
-      { left: '$$', right: '$$', display: true },
-      { left: '\\(', right: '\\)', display: false },
-    ],
-    throwOnError: false,
-    strict: false,
-  })
+  renderCardMath(element)
   return element.innerHTML
 })
 </script>

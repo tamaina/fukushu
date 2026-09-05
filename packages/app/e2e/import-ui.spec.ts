@@ -90,7 +90,7 @@ test('diagnostics identify cards and simple HTML can be imported without an ifra
   await warnings.locator('summary').click()
   await expect(warnings.getByText('日本史')).toBeVisible()
   await expect(warnings.getByText('鎌倉幕府', { exact: false })).toBeVisible()
-  await warnings.getByRole('button', { name: 'この問題を確認' }).click()
+  await warnings.getByRole('link', { name: 'この問題を確認' }).click()
   await expect(page.getByLabel(/シンプルなカードを通常表示に変換/)).toBeChecked()
   await expect(page.locator('iframe')).toHaveCount(0)
   await page.getByLabel(/シンプルなカードを通常表示に変換/).uncheck()

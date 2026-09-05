@@ -13,6 +13,7 @@ export interface AnkiReview {
   type: number
 }
 export interface AnkiCardSource {
+  guid?: string
   noteId: string
   cardId: string
   notetypeId: string

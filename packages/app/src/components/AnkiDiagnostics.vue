@@ -58,11 +58,13 @@ const groups = computed(() => {
       </summary>
       <ul v-if="group.cards.size && expanded.has(group.code + group.message)">
         <li v-for="card in group.cards.values()" :key="card.deckId + card.cardId">
-          <span
+          <span class="problem-summary"
             ><span class="badge">{{ card.deckName }}</span>
             {{ card.excerpt || `カード ${card.cardId}` }}</span
           >
-          <button class="secondary" @click="$emit('preview', card)">この問題を確認</button>
+          <a class="problem-link" href="#apkg-card-preview" @click.prevent="$emit('preview', card)"
+            >この問題を確認</a
+          >
         </li>
       </ul>
     </details>
@@ -85,15 +87,24 @@ summary {
   line-height: 1.6;
 }
 ul {
+  margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
 }
 li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.problem-summary {
+  overflow-wrap: anywhere;
+}
+.problem-link {
+  white-space: nowrap;
+  font-size: 0.8rem;
 }
 </style>

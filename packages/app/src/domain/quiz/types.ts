@@ -98,6 +98,7 @@ export interface FlashcardQuestion extends QuizQuestionBase {
   ankiCss?: string
   ankiTemplateMode?: 'native' | 'isolated'
   ankiSource?: {
+    guid?: string
     noteId: string
     cardId: string
     notetypeId: string

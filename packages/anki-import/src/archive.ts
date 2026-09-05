@@ -2,9 +2,10 @@ import { Unzip, UnzipInflate } from 'fflate'
 import { Decompress } from 'fzstd'
 import initSqlJs from 'sql.js'
 import { Field, Type } from 'protobufjs/light'
+import { APKG_MAX_BYTES } from './limits'
 
 export const limits = {
-  archive: 100 * 1024 ** 2,
+  archive: APKG_MAX_BYTES,
   expanded: 500 * 1024 ** 2,
   collection: 250 * 1024 ** 2,
   media: 50 * 1024 ** 2,
@@ -202,7 +203,7 @@ export async function decodeArchive(
       throw new Error('APKG_UNKNOWN_SCHEMA')
     if (format === '21b') {
       const fields = query('select ntid, ord, name from fields order by ord'),
-        templates = query('select ntid, ord, config from templates order by ord')
+        templates = query('select ntid, ord, name, config from templates order by ord')
       const models = Object.fromEntries(
         query('select id, name, config from notetypes').map((m) => {
           const config = modelConfig.toObject(modelConfig.decode(m.config as Uint8Array), {
@@ -222,6 +223,7 @@ export async function decodeArchive(
                     defaults: true,
                   }),
                   ord: t.ord,
+                  name: t.name,
                 })),
             },
           ]
@@ -248,7 +250,9 @@ export async function decodeArchive(
     const rows = {
       col: [col],
       notes: query('select id,guid,mid,flds,tags from notes'),
-      cards: query('select id,nid,did,ord from cards'),
+      cards: query(
+        `select id,nid,did,ord${query('pragma table_info(cards)').some((c) => c.name === 'flags') ? ',flags' : ''} from cards`,
+      ),
       revlog: query('select id,cid,ease,type from revlog order by id'),
     }
     delete files[name]

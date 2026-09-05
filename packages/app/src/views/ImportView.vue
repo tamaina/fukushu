@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Upload } from '@lucide/vue'
 import ImportChangeBadges from '../components/ImportChangeBadges.vue'
 import AnkiDiagnostics from '../components/AnkiDiagnostics.vue'
-import type { AnkiDiagnostic } from '@fukushu/anki-import'
+import { APKG_MAX_BYTES, type AnkiDiagnostic } from '@fukushu/anki-import'
 import DiagnosticList from '../components/DiagnosticList.vue'
 import ContentRenderer from '../components/ContentRenderer.vue'
 import { previewGift, type ImportPreview } from '../application/importGift'
@@ -253,8 +253,10 @@ async function analyze(requestPersistence = true, inheritedRun?: number): Promis
 }
 async function readFile(file?: File): Promise<void> {
   if (!file || busy.value) return
-  if (file.size > (/\.apkg$/i.test(file.name) ? 100 : 10) * 1024 ** 2) {
-    message.value = $locale.value.sfc.fileTooLarge
+  if (file.size > (/\.apkg$/i.test(file.name) ? APKG_MAX_BYTES : 10 * 1024 ** 2)) {
+    message.value = /\.apkg$/i.test(file.name)
+      ? $locale.value.sfc.apkgTooLarge
+      : $locale.value.sfc.fileTooLarge
     return
   }
   if (!/\.(gift|txt|csv|tsv|zip|apkg)$/i.test(file.name)) {
@@ -911,7 +913,8 @@ updateTitle: ファイルから問題集を更新
 importTitle: 問題集を読み込む
 importIntro: GIFT、Anki CSV／TSV、.apkg、またはメディア入りZIPを選択するか、テキストを貼り付けてください。
 chooseFile: ファイルを選択
-fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg（APKGは最大100MB）
+fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg（APKGは最大256MiB）
+apkgTooLarge: APKGは256MiB以下にしてください。
 format: 形式
 deckName: 問題集名
 giftText: GIFTテキスト
@@ -955,7 +958,8 @@ updateTitle: Update deck from file
 importTitle: Import deck
 importIntro: Choose a GIFT, Anki CSV/TSV, .apkg, or media ZIP file, or paste text.
 chooseFile: Choose file
-fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg (APKG up to 100 MB)
+fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg (APKG up to 256 MiB)
+apkgTooLarge: Choose an APKG no larger than 256 MiB.
 format: Format
 deckName: Deck name
 giftText: GIFT text

@@ -1,6 +1,7 @@
 import { simplifyHtml } from './simplify'
 import type { DecodedArchive } from './archive'
-import { safeAnkiCss, safeAnkiHtml } from './safety'
+import { safeAnkiCss, safeAnkiHtml, safeAnkiSvg } from './safety'
+import { replaceLegacyLatex } from './latex'
 import { renderTemplate, nativeTemplate } from './template'
 import { Field, Type } from 'protobufjs/light'
 import type {
@@ -15,6 +16,7 @@ import type {
 const MAX_MEDIA_FILE = 50 * 1024 * 1024
 
 interface AnkiTemplateDefinition {
+  name?: string
   ord: number
   qfmt?: string
   afmt?: string
@@ -151,7 +153,7 @@ export async function convertArchive(
   const mediaUrls = new Map<string, { id: string; url: string }>()
   for (const entry of mediaMap) {
     if (options.signal?.aborted) throw new DOMException('キャンセルしました', 'AbortError')
-    const data = entry.archiveNames.map((name) => files[name]).find(Boolean)
+    let data = entry.archiveNames.map((name) => files[name]).find(Boolean)
     if (!data) {
       diagnostics.push(diagnostic('APKG_MISSING_MEDIA', `メディアがありません: ${entry.name}`))
       continue
@@ -164,12 +166,22 @@ export async function convertArchive(
       if (hash.length !== entry.sha1.length || !bytesEqual(hash, entry.sha1))
         throw new Error('APKG_MEDIA_HASH_MISMATCH')
     }
-    const id = await sha256Bytes(data)
     const mime = mimeType(entry.name)
-    if (mime === 'application/octet-stream' || mime === 'image/svg+xml') {
+    if (mime === 'application/octet-stream') {
       diagnostics.push(diagnostic('APKG_UNSUPPORTED_MEDIA', entry.name))
       continue
     }
+    if (mime === 'image/svg+xml') {
+      try {
+        data = new TextEncoder().encode(
+          safeAnkiSvg(new TextDecoder('utf-8', { fatal: true }).decode(data)),
+        )
+      } catch {
+        diagnostics.push(diagnostic('APKG_UNSAFE_SVG', entry.name))
+        continue
+      }
+    }
+    const id = await sha256Bytes(data)
     if (!media.some((item) => item.id === id))
       media.push({
         id,
@@ -181,6 +193,14 @@ export async function convertArchive(
   }
   const notes = new Map((rows.notes ?? []).map((note) => [Number(note.id), note]))
   const cards = rows.cards ?? []
+  const baseCounts = new Map<string, number>(),
+    noteCounts = new Map<string, number>()
+  for (const card of cards) {
+    const key = `${notes.get(Number(card.nid))?.guid}:${card.ord}`
+    baseCounts.set(key, (baseCounts.get(key) ?? 0) + 1)
+    const noteKey = `${card.nid}:${card.ord}`
+    noteCounts.set(noteKey, (noteCounts.get(noteKey) ?? 0) + 1)
+  }
   const reviews = rows.revlog ?? []
   const reviewsByCard = new Map<number, AnkiReview[]>()
   let skippedReviewCount = 0
@@ -254,26 +274,45 @@ export async function convertArchive(
           String(note.flds).split('\x1f')[index] ?? '',
         ]),
       )
+      const deckTitle = deckDefinitions[String(card.did)]?.name ?? String(card.did)
+      const special = {
+        Tags: String(note.tags ?? '').trim(),
+        Type: model.name ?? '',
+        Deck: deckTitle,
+        Subdeck: deckTitle.split('::').at(-1) ?? '',
+        Card: template.name ?? String(Number(card.ord) + 1),
+        CardFlag: Number(card.flags ?? 0) & 7 ? `flag${Number(card.flags) & 7}` : '',
+      }
+      // User fields take precedence over built-in metadata, as in Anki.
+      for (const [name, value] of Object.entries(special))
+        if (!Object.hasOwn(fields, name)) fields[name] = value
       const clozeNumber = Number(card.ord)
       const front = renderTemplate(String(template.qfmt ?? ''), fields, '', clozeNumber)
+      const frontForBack =
+        front.acceptedAnswer === undefined
+          ? front.html
+          : renderTemplate(String(template.qfmt ?? ''), fields, '', clozeNumber, true).html
       const back = renderTemplate(
         String(template.afmt ?? ''),
         fields,
-        front.html,
+        frontForBack,
         clozeNumber,
         true,
       )
-      if (/\{\{[^}]+}}/.test(front.html + back.html))
-        diagnostics.push(
-          diagnostic(
-            'APKG_UNSUPPORTED_TEMPLATE',
-            `カード ${card.id} に未対応のテンプレート構文があります。`,
-          ),
-        )
       for (const warning of [...front.warnings, ...back.warnings])
         diagnostics.push(diagnostic('APKG_UNSUPPORTED_TEMPLATE', warning, 'error'))
-      const prompt = sanitizeHtml(front.html, mediaUrls, diagnostics)
-      const answer = sanitizeHtml(back.html, mediaUrls, diagnostics)
+      const warnLatex = (message: string) =>
+        diagnostics.push(diagnostic('APKG_MISSING_LATEX', message))
+      const prompt = sanitizeHtml(
+        await replaceLegacyLatex(front.html, mediaUrls, warnLatex),
+        mediaUrls,
+        diagnostics,
+      )
+      const answer = sanitizeHtml(
+        await replaceLegacyLatex(back.html, mediaUrls, warnLatex),
+        mediaUrls,
+        diagnostics,
+      )
       if (
         !prompt.replace(/<[^>]+>/g, '').trim() &&
         !/<(?:img|audio)\b/.test(prompt) &&
@@ -293,7 +332,11 @@ export async function convertArchive(
         name: deckName,
         cards: [],
       }
-      const sourceKey = `${note.guid}:${Number(card.ord)}`
+      const baseKey = `${note.guid}:${Number(card.ord)}`
+      const sourceKey =
+        (baseCounts.get(baseKey) ?? 0) > 1
+          ? `${baseKey}:note:${note.id}${(noteCounts.get(`${note.id}:${card.ord}`) ?? 0) > 1 ? `:card:${card.id}` : ''}`
+          : baseKey
       const simple = nativeTemplate(
         template.qfmt ?? '',
         template.afmt ?? '',
@@ -322,6 +365,7 @@ export async function convertArchive(
           .filter(Boolean),
         rendering: simple ? { mode: 'native' } : { mode: 'template', css },
         source: {
+          guid: String(note.guid),
           noteId: String(note.id),
           cardId: String(card.id),
           notetypeId: String(note.mid),
@@ -344,7 +388,12 @@ export async function convertArchive(
         item.card = {
           deckId: String(card.did),
           deckName: deckDefinitions[String(card.did)]?.name ?? String(card.did),
-          key: String(note?.guid ?? '') + ':' + String(card.ord),
+          key: (() => {
+            const key = String(note?.guid ?? '') + ':' + String(card.ord)
+            return (baseCounts.get(key) ?? 0) > 1
+              ? `${key}:note:${card.nid}${(noteCounts.get(`${card.nid}:${card.ord}`) ?? 0) > 1 ? `:card:${card.id}` : ''}`
+              : key
+          })(),
           cardId: String(card.id),
           excerpt,
         }

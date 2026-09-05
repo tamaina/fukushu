@@ -33,6 +33,35 @@ export function parseTemplate(source: string): Node[] {
 const escape = (s: string) =>
   s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 const text = (s: string) => new DOMParser().parseFromString(s, 'text/html').body.textContent ?? ''
+function reading(value: string, mode: string): string {
+  const root = new DOMParser().parseFromString(value, 'text/html').body
+  const walker = root.ownerDocument.createTreeWalker(root, 4)
+  // Snapshot text nodes before replacing them. This also keeps field attributes intact.
+  const texts: globalThis.Node[] = []
+  while (walker.nextNode()) texts.push(walker.currentNode)
+  for (const node of texts) {
+    if (node.parentElement?.closest('ruby,script,style')) continue
+    const source = node.textContent ?? ''
+    const fragment = root.ownerDocument.createDocumentFragment()
+    let end = 0
+    for (const match of source.matchAll(/([^\s[\]]+)\[([^\]]+)\]/g)) {
+      if (match[2]!.startsWith('sound:')) continue
+      fragment.append(source.slice(end, match.index))
+      end = match.index! + match[0].length
+      if (mode === 'furigana') {
+        const ruby = root.ownerDocument.createElement('ruby'),
+          rt = root.ownerDocument.createElement('rt')
+        ruby.append(match[1]!)
+        rt.textContent = match[2]!
+        ruby.append(rt)
+        fragment.append(ruby)
+      } else fragment.append(mode === 'kana' ? match[2]! : match[1]!)
+    }
+    fragment.append(source.slice(end))
+    node.parentNode?.replaceChild(fragment, node)
+  }
+  return root.innerHTML
+}
 export function renderTemplate(
   source: string,
   fields: Record<string, string>,
@@ -62,9 +91,12 @@ export function renderTemplate(
         let value = fields[name]!
         for (const filter of parts.reverse()) {
           if (filter === 'text') value = escape(text(value))
+          else if (['furigana', 'kana', 'kanji'].includes(filter)) value = reading(value, filter)
           else if (filter === 'hint') value = `<details><summary>ヒント</summary>${value}</details>`
           else if (filter === 'type') {
-            acceptedAnswer = text(value).trim()
+            acceptedAnswer = text(value)
+              .replace(/\[sound:[^\]]+\]/g, '')
+              .trim()
             value = reveal ? `<span class="type-answer">${escape(acceptedAnswer)}</span>` : ''
           } else if (filter === 'cloze')
             value = value.replace(

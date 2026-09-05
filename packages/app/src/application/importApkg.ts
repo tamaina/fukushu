@@ -1,5 +1,6 @@
 import {
   convertArchive,
+  APKG_MAX_BYTES,
   type AnkiDiagnostic,
   type AnkiPackage,
   type AnkiReview,
@@ -44,7 +45,7 @@ export async function previewApkg(
   options: ConversionOptions = {},
 ): Promise<ApkgPreview> {
   if (options.signal?.aborted) throw new DOMException('キャンセルしました', 'AbortError')
-  if (file.size > 100 * 1024 ** 2) throw new Error('APKG_ARCHIVE_TOO_LARGE')
+  if (file.size > APKG_MAX_BYTES) throw new Error('APKG_ARCHIVE_TOO_LARGE')
   const buffer =
     typeof file.arrayBuffer === 'function'
       ? await file.arrayBuffer()

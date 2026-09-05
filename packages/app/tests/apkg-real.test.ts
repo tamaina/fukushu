@@ -145,3 +145,33 @@ it('repairs legacy rendering without resetting history and identifies source can
   expect(changed[0]!.exact).toBe(false)
   expect(changed[0]!.matchingCards).toBeGreaterThan(0)
 })
+
+it('preserves identities when duplicate GUIDs appear, disappear, and return', async () => {
+  const p = await previewApkg(fixture('official-21b'))
+  const first = await prepareApkg(p, 'fixture.apkg')
+  await applyApkg(first)
+  const original = p.decks[0]!.questions[0]!,
+    base = original.sourceKey
+  const originalId = first.questions.find((q) => q.sourceKey === base)!.id
+  const duplicate = structuredClone(original)
+  duplicate.id = 'new-preview-id'
+  duplicate.ankiSource!.noteId = '999999999999'
+  duplicate.ankiSource!.cardId = '999999999998'
+  duplicate.sourceKey = `${base}:note:${duplicate.ankiSource!.noteId}`
+  const two = structuredClone(p)
+  two.decks[0]!.questions[0]!.sourceKey = `${base}:note:${original.ankiSource!.noteId}`
+  two.decks[0]!.questions.push(duplicate)
+  await applyApkg(await prepareApkg(two, 'fixture.apkg', false, first.source.id))
+  const db = await database()
+  const added = (await db.getAll('questions')).find((q) => q.sourceKey === duplicate.sourceKey)!
+  expect((await db.get('studyStates', originalId))!.card.reps).toBe(4)
+  const onlyDuplicate = structuredClone(p)
+  onlyDuplicate.decks[0]!.questions[0] = { ...duplicate, sourceKey: base }
+  await applyApkg(await prepareApkg(onlyDuplicate, 'fixture.apkg', false, first.source.id))
+  expect((await db.get('questions', added.id))!.enabled).toBe(true)
+  expect((await db.get('questions', originalId))!.enabled).toBe(false)
+  await applyApkg(await prepareApkg(p, 'fixture.apkg', false, first.source.id))
+  expect((await db.get('questions', originalId))!.enabled).toBe(true)
+  expect((await db.get('questions', added.id))!.enabled).toBe(false)
+  expect((await db.get('studyStates', originalId))!.card.reps).toBe(4)
+})
