@@ -1,11 +1,36 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { setPendingImportFile } from '../application/pendingImportFile'
 import { ArrowRight, Upload } from '@lucide/vue'
 import EmptyState from '../components/EmptyState.vue'
 import { buildStudyQueue } from '../application/study'
 import { systemClock } from '../domain/time'
 import { deckRepository, reviewRepository } from '../infrastructure/db/database'
 import type { DeckRecord } from '../infrastructure/db/schema'
+const router = useRouter()
+const dragging = ref(false)
+let dragDepth = 0
+function dragEnter(event: DragEvent) {
+  if (!event.dataTransfer?.types.includes('Files')) return
+  dragDepth++
+  dragging.value = true
+}
+function dragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (!dragDepth) dragging.value = false
+}
+function dragOver(event: DragEvent) {
+  if (event.dataTransfer?.types.includes('Files')) event.dataTransfer.dropEffect = 'copy'
+}
+function drop(event: DragEvent) {
+  dragDepth = 0
+  dragging.value = false
+  const file = event.dataTransfer?.files[0]
+  if (!file) return
+  setPendingImportFile(file)
+  void router.push('/import')
+}
 const decks = ref<DeckRecord[]>([])
 const due = ref(0)
 const fresh = ref(0)
@@ -44,9 +69,16 @@ const total = computed(() => due.value + fresh.value)
       </div>
       <EmptyState
         v-if="!decks.length"
+        class="home-import-drop"
+        :class="{ dragging }"
         :title="$locale.sfc.importEmptyTitle"
         :message="$locale.sfc.importEmptyMessage"
-        ><RouterLink class="button" to="/import">{{
+        @dragenter.prevent="dragEnter"
+        @dragover.prevent="dragOver"
+        @dragleave.prevent="dragLeave"
+        @drop.prevent="drop"
+        ><p class="muted">{{ dragging ? $locale.sfc.dropNow : $locale.sfc.dropHint }}</p>
+        <RouterLink class="button" to="/import">{{
           $locale.sfc.importGift
         }}</RouterLink></EmptyState
       >
@@ -71,6 +103,12 @@ const total = computed(() => due.value + fresh.value)
     </section>
   </div>
 </template>
+<style scoped>
+.home-import-drop.dragging {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+</style>
 <locale locale="ja-JP" lang="yaml">
 today: 今日の学習
 available: '{count}問を学習できます'
@@ -80,6 +118,8 @@ startStudy: 学習を始める
 importGift: 問題集を読み込む
 decks: 問題集
 viewAll: すべて見る
+dropHint: ここにファイルをドラッグ＆ドロップできます。
+dropNow: ファイルをドロップして読み込む
 importEmptyTitle: 問題集を読み込みましょう
 importEmptyMessage: GIFT, apkg, Anki互換CSV/TSVを読み込めます。問題集と学習履歴は、このブラウザだけに保存されます。設定-バックアップでバックアップしたり他の端末に移行したりできます。
 questionsCount: '{count}問'
@@ -95,6 +135,8 @@ startStudy: Start studying
 importGift: Import deck
 decks: Decks
 viewAll: View all
+dropHint: Drag and drop a file here.
+dropNow: Drop the file to import
 importEmptyTitle: Import a deck
 importEmptyMessage: Decks and study history are stored in this browser's IndexedDB.
 questionsCount: '{count, plural, one {# question} other {# questions}}'

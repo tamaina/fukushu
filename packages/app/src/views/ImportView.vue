@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onBeforeUnmount, watch, ref, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { takePendingImportFile } from '../application/pendingImportFile'
 import { Upload } from '@lucide/vue'
 import ImportChangeBadges from '../components/ImportChangeBadges.vue'
 import AnkiDiagnostics from '../components/AnkiDiagnostics.vue'
@@ -420,7 +421,11 @@ async function save(): Promise<void> {
   }
 }
 onMounted(async () => {
-  if (!updateDeckId) return
+  const file = takePendingImportFile()
+  if (!updateDeckId) {
+    if (file) await readFile(file)
+    return
+  }
   const deck = await deckRepository.get(updateDeckId)
   if (!deck) return
   deckName.value = deck.name
