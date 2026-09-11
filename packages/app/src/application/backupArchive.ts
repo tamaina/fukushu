@@ -1,8 +1,9 @@
 import * as v from 'valibot'
+import { createSHA256 } from 'hash-wasm'
 import { database } from '../infrastructure/db/database'
 import { defaultSettings } from '../infrastructure/db/schema'
 import { restoreBackupData, type AppBackup } from './backup'
-import { hashBlob, checkBackupCancelled, type BackupOptions } from './backupIO'
+import { hashBlob, checkBackupCancelled, BACKUP_CHUNK_BYTES, type BackupOptions } from './backupIO'
 
 // Each record is uint32-LE JSON length, UTF-8 metadata, then optional raw Blob bytes.
 // The final 64 ASCII bytes are SHA-256 of every preceding byte, including the magic.
@@ -24,7 +25,7 @@ const RecordSchema = v.strictObject({
   blobSize: v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(0))),
 })
 
-export async function createBackupArchive(options: BackupOptions = {}): Promise<Blob> {
+async function snapshotBackup(options: BackupOptions): Promise<Blob[]> {
   checkBackupCancelled(options)
   const db = await database()
   const tx = db.transaction([...stores])
@@ -36,7 +37,7 @@ export async function createBackupArchive(options: BackupOptions = {}): Promise<
     }
   }
   options.signal?.addEventListener('abort', abort, { once: true })
-  const parts: BlobPart[] = [BACKUP_MAGIC]
+  const parts: Blob[] = [new Blob([BACKUP_MAGIC])]
   let count = 0
   function appendRecord(store: (typeof stores)[number], raw: object) {
     const value = { ...raw } as Record<string, unknown>
@@ -63,7 +64,7 @@ export async function createBackupArchive(options: BackupOptions = {}): Promise<
     if (metadata.size > MAX_BACKUP_RECORD_BYTES) throw new Error('BACKUP_RECORD_TOO_LARGE')
     const length = new Uint8Array(4)
     new DataView(length.buffer).setUint32(0, metadata.size, true)
-    parts.push(length, metadata)
+    parts.push(new Blob([length]), metadata)
     if (blob) parts.push(blob)
     options.onProgress?.({ phase: 'reading', completed: ++count, total: 0 })
   }
@@ -88,9 +89,73 @@ export async function createBackupArchive(options: BackupOptions = {}): Promise<
   } finally {
     options.signal?.removeEventListener('abort', abort)
   }
-  const content = new Blob(parts)
-  const checksum = await hashBlob(content, options)
-  return new Blob([content, checksum], { type: 'application/octet-stream' })
+  return parts
+}
+
+/** Snapshot metadata/Blob handles once, then materialize only the requested chunk.
+ * Metadata and handles still scale with record count; binary payloads are not copied.
+ */
+export async function createBackupStream(options: BackupOptions = {}): Promise<{
+  stream: ReadableStream<Uint8Array>
+  size: number
+}> {
+  const parts = await snapshotBackup(options)
+  const size = parts.reduce((sum, part) => sum + part.size, 64)
+  const hash = await createSHA256()
+  let index = 0
+  let offset = 0
+  let completed = 0
+  const stream = new ReadableStream<Uint8Array>(
+    {
+      async pull(controller) {
+        try {
+          checkBackupCancelled(options)
+          const chunks: Blob[] = []
+          let remaining = BACKUP_CHUNK_BYTES
+          while (index < parts.length && remaining > 0) {
+            const part = parts[index]!
+            const end = Math.min(part.size, offset + remaining)
+            if (end > offset) chunks.push(part.slice(offset, end))
+            remaining -= end - offset
+            offset = end
+            if (offset === part.size) {
+              parts[index] = new Blob([])
+              index++
+              offset = 0
+            }
+          }
+          if (!chunks.length) {
+            controller.enqueue(new globalThis.TextEncoder().encode(hash.digest()))
+            controller.close()
+            parts.length = 0
+            return
+          }
+          // Batch small metadata records too, so thousands of records do not
+          // require thousands of file reads and round trips to the SW.
+          const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer())
+          checkBackupCancelled(options)
+          hash.update(bytes)
+          completed += bytes.length
+          options.onProgress?.({ phase: 'checking', completed, total: size - 64 })
+          controller.enqueue(bytes)
+        } catch (error) {
+          parts.length = 0
+          controller.error(error)
+        }
+      },
+      cancel() {
+        parts.length = 0
+      },
+    },
+    { highWaterMark: 0 },
+  )
+  return { stream, size }
+}
+
+/** Blob compatibility helper for tests/callers; the settings UI uses the stream. */
+export async function createBackupArchive(options: BackupOptions = {}): Promise<Blob> {
+  const { stream } = await createBackupStream(options)
+  return new Response(stream).blob()
 }
 
 export async function restoreBackupFile(file: Blob, options: BackupOptions = {}): Promise<void> {

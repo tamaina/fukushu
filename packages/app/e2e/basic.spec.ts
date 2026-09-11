@@ -157,6 +157,7 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'バックアップを保存' }).click()
   const download = await downloadPromise
+  expect(new URL(download.url()).pathname).toMatch(/^\/__backup_download\//)
   const backupPath = test.info().outputPath('backup.fukushu')
   await download.saveAs(backupPath)
   page.once('dialog', (dialog) => dialog.accept())

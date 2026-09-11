@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/__backup_download\//],
+        importScripts: ['/backup-download-sw.js'],
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,woff,woff2,ttf}'],
       },
     }),

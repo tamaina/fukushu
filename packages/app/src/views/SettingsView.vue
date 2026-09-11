@@ -2,7 +2,8 @@
 import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { Download, Upload, Trash2 } from '@lucide/vue'
 import { clearDatabase, settingsRepository } from '../infrastructure/db/database'
-import { createBackupArchive, restoreBackupFile } from '../application/backupArchive'
+import { restoreBackupFile } from '../application/backupArchive'
+import { downloadBackup } from '../application/backupDownload'
 import type { BackupOptions } from '../application/backupIO'
 import { defaultSettings, type SettingsRecord } from '../infrastructure/db/schema'
 const settings = ref<SettingsRecord>({ ...defaultSettings })
@@ -11,10 +12,8 @@ const error = ref('')
 const busy = ref(false)
 const progress = ref('')
 let controller: AbortController | undefined
-let downloadUrl: string | undefined
 onBeforeUnmount(() => {
   controller?.abort()
-  if (downloadUrl) URL.revokeObjectURL(downloadUrl)
 })
 function beginBackup(): BackupOptions {
   busy.value = true
@@ -37,6 +36,10 @@ function beginBackup(): BackupOptions {
 function backupFailed(reason: unknown): void {
   progress.value = ''
   if (reason instanceof globalThis.DOMException && reason.name === 'AbortError') return
+  if (reason instanceof Error && reason.message === 'BACKUP_SW_UNAVAILABLE') {
+    error.value = $locale.value.sfc.backupUnavailable
+    return
+  }
   error.value =
     reason instanceof globalThis.DOMException && reason.name === 'QuotaExceededError'
       ? $locale.value.sfc.backupQuota
@@ -70,15 +73,7 @@ function applyTheme(): void {
 async function download(): Promise<void> {
   if (busy.value) return
   try {
-    const file = await createBackupArchive(beginBackup())
-    if (downloadUrl) URL.revokeObjectURL(downloadUrl)
-    downloadUrl = URL.createObjectURL(file)
-    const anchor = document.createElement('a')
-    anchor.href = downloadUrl
-    anchor.download = `fukushu-backup-${new Date().toISOString().slice(0, 10)}.fukushu`
-    anchor.click()
-    // Keep the URL alive until the next export or unmount; immediate revocation can
-    // race a large browser download.
+    await downloadBackup(beginBackup())
     progress.value = $locale.value.sfc.backupDownloaded
   } catch (reason) {
     backupFailed(reason)
@@ -240,7 +235,8 @@ restoreBackup: バックアップから復元
 backupReading: データを読み込んでいます
 backupChecking: ファイルを検査しています
 backupSaving: データを復元しています
-backupDownloaded: バックアップのダウンロードを開始しました。
+backupDownloaded: バックアップをブラウザに送信しました。保存状況はダウンロード一覧で確認できます。
+backupUnavailable: この画面ではストリーミング保存を開始できません。アプリを更新して再読み込みするか、対応ブラウザでお試しください。
 backupQuota: 保存容量が不足しています。空き容量を増やすか、別の端末で復元してください。
 backupFailed: バックアップを処理できませんでした。ファイルの破損や、端末の空き容量を確認してください。
 cancelBackup: キャンセル
@@ -278,7 +274,8 @@ restoreBackup: Restore backup
 backupReading: Reading data
 backupChecking: Checking file
 backupSaving: Restoring data
-backupDownloaded: Backup download started.
+backupDownloaded: Backup sent to your browser. Check its download list for the save status.
+backupUnavailable: Streaming download is unavailable. Update and reload the app, or try a supported browser.
 backupQuota: Not enough storage. Free up space or restore on another device.
 backupFailed: Could not process the backup. Check the file for corruption and the available storage on your device.
 cancelBackup: Cancel

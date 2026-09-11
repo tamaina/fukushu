@@ -1,0 +1,80 @@
+{
+  "date": "2026-09-11",
+  "environment": "Linux Chromium persistent profiles, one run per input on shared host; runs overlap other tests; no quota override",
+  "verification": [
+    "SW download URL, deletion, restore, record counts and byte-identical re-export",
+    "Reject Blob.arrayBuffer reads and new Blob constructions over 4MiB during backup/restore",
+    "Separate browser tests cover offline, single-use URLs, cancellation, delayed SW installation and repeated small downloads"
+  ],
+  "limitations": [
+    "Not a peak browser/RSS measurement; metadata and Blob references remain proportional to record count",
+    "Safari and Firefox not verified; local WebKit could not launch due to missing system libraries"
+  ],
+  "sourceHashes": {
+    "packages/app/src/application/backupArchive.ts": "82855fc182c06b17f5086e7c18324b053e7fc95d41a16f65505df7140d916e78",
+    "packages/app/src/application/backupDownload.ts": "549d87866e708b337655a5d9126154defb3d80ff5883992e2d87ffc0e90a1ab9",
+    "packages/app/src/application/backupIO.ts": "6c9635a68c333cfca9e44e91cad57224b5f5fcb75c900dec393c4332f6210e9c",
+    "packages/app/src/application/backup.ts": "a70e4f84d0900fcb20253e6c809fce14cc26bca4b79d8ac36f5e57c6fdc26101",
+    "packages/app/public/backup-download-sw.js": "2e14f174a7f0f36b8e29816e875fc4f244e8489d9e5d1eb43cb8abad0fcafe1c",
+    "packages/app/src/views/SettingsView.vue": "d6a8030f6a740876341ca3dd356e6b41cd20229414836fa3f3ac6b094cde9676",
+    "packages/app/vite.config.ts": "f7653aa43ee73bab236350bdb91ede8a248b3741d4ae78ae67215ef44a75a5ea"
+  },
+  "measurements": {
+    "synthetic600": {
+      "source": "official fixture + synthetic binary",
+      "syntheticMiB": 600,
+      "browserProfile": "persistent",
+      "counts": {
+        "decks": 2,
+        "questions": 9,
+        "studyStates": 9,
+        "reviewLogs": 36,
+        "importSources": 2,
+        "media": 2,
+        "imports": 2
+      },
+      "storageBefore": {
+        "quota": 11371082166,
+        "usage": 633663926,
+        "usageDetails": {
+          "caches": 4242944,
+          "indexedDB": 629394619,
+          "serviceWorkerRegistrations": 26363
+        }
+      },
+      "bytes": 629243549,
+      "exportMs": 16346,
+      "restoreMs": 10454,
+      "sha256": "21d006ac6f5ce762e21ca5d7befa4e96ba325cd3dc1a0fbb5a3a3fb2d7d407ca",
+      "maxBinaryReadBytes": 4194304
+    },
+    "kaishi": {
+      "source": "../../.cache/anki-corpus/kaishi-1.5k.apkg",
+      "syntheticMiB": 0,
+      "browserProfile": "persistent",
+      "counts": {
+        "decks": 1,
+        "questions": 1501,
+        "studyStates": 1501,
+        "reviewLogs": 0,
+        "importSources": 1,
+        "media": 4345,
+        "imports": 1
+      },
+      "storageBefore": {
+        "quota": 10977204940,
+        "usage": 239786700,
+        "usageDetails": {
+          "caches": 4252672,
+          "indexedDB": 235507665,
+          "serviceWorkerRegistrations": 26363
+        }
+      },
+      "bytes": 231443511,
+      "exportMs": 16625,
+      "restoreMs": 21989,
+      "sha256": "6ba43b9de3b43a95b8aa0e176210df778593559130a17f1c7f80c0518829515b",
+      "maxBinaryReadBytes": 4194304
+    }
+  }
+}

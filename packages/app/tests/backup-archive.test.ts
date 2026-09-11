@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import {
   createBackupArchive,
+  createBackupStream,
   restoreBackupFile,
   BACKUP_MAGIC,
 } from '../src/application/backupArchive'
@@ -196,4 +197,20 @@ it('exports a consistent snapshot while another transaction updates settings', a
   expect((await settingsRepository.get()).newQuestionsPerDay).toBe(77)
   await restoreBackupFile(archive)
   expect(await settingsRepository.get()).toEqual(originalSettings)
+})
+
+it('reads binary only on stream demand and releases a cancelled snapshot', async () => {
+  await seed()
+  const read = vi.spyOn(Blob.prototype, 'arrayBuffer')
+  const { stream, size } = await createBackupStream()
+  expect(size).toBeGreaterThan(64)
+  expect(read).not.toHaveBeenCalled()
+  const reader = stream.getReader()
+  const first = await reader.read()
+  expect(new TextDecoder().decode(first.value?.slice(0, BACKUP_MAGIC.length))).toBe(BACKUP_MAGIC)
+  expect(read).toHaveBeenCalledTimes(1)
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  expect(read).toHaveBeenCalledTimes(1)
+  await reader.cancel()
+  expect((await reader.read()).done).toBe(true)
 })

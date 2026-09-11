@@ -46,6 +46,13 @@ async function counts(page: Page) {
 }
 async function installReadGuard(page: Page) {
   const guard = () => {
+    globalThis.Blob = new Proxy(Blob, {
+      construct(target, args) {
+        const blob = Reflect.construct(target, args) as Blob
+        if (blob.size > 4 * 1024 ** 2) throw new Error('Aggregate backup Blob constructed')
+        return blob
+      },
+    })
     const original = Blob.prototype.arrayBuffer
     Blob.prototype.arrayBuffer = function () {
       if (this.size > 4 * 1024 ** 2) throw new Error('Unbounded backup binary read')
@@ -73,7 +80,9 @@ async function installReadGuard(page: Page) {
 async function download(page: Page, path: string) {
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'バックアップを保存' }).click()
-  await (await pending).saveAs(path)
+  const file = await pending
+  expect(new URL(file.url()).pathname).toMatch(/^\/__backup_download\//)
+  await file.saveAs(path)
   await expect(page.getByRole('button', { name: 'バックアップを保存' })).toBeEnabled()
 }
 
