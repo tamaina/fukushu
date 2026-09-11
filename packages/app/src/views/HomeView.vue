@@ -81,7 +81,7 @@ importGift: 問題集を読み込む
 decks: 問題集
 viewAll: すべて見る
 importEmptyTitle: 問題集を読み込みましょう
-importEmptyMessage: 問題集と学習履歴は、このブラウザのIndexedDBへ保存されます。
+importEmptyMessage: GIFT, apkg, Anki互換CSV/TSVを読み込めます。問題集と学習履歴は、このブラウザだけに保存されます。設定-バックアップでバックアップしたり他の端末に移行したりできます。
 questionsCount: '{count}問'
 lastSevenDays: 最近7日間
 studiedTimes: 回 学習しました
