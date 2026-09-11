@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import { safeAnkiCss, safeAnkiHtml, safeAnkiSvg } from '@fukushu/anki-import/safety'
+import { hashBlob, type BackupOptions, checkBackupCancelled } from './backupIO'
 import { database, settingsRepository } from '../infrastructure/db/database'
 import type {
   DeckRecord,
@@ -9,6 +10,7 @@ import type {
   StudyStateRecord,
   ImportSourceRecord,
   MediaRecord,
+  ImportRecord,
 } from '../infrastructure/db/schema'
 
 interface BackupImportSource extends Omit<ImportSourceRecord, 'sourceArchive'> {
@@ -30,6 +32,7 @@ export interface AppBackup {
   reviewLogs: ReviewLogRecord[]
   importSources?: BackupImportSource[]
   media?: BackupMedia[]
+  imports?: ImportRecord[]
 }
 
 const iso = () => v.pipe(v.string(), v.isoTimestamp())
@@ -288,6 +291,19 @@ const BackupSchema = v.strictObject({
       }),
     ),
   ),
+  imports: v.optional(
+    v.array(
+      v.strictObject({
+        id: v.string(),
+        deckId: v.string(),
+        importedAt: iso(),
+        sourceHash: v.string(),
+        added: integer(),
+        changed: integer(),
+        disabled: integer(),
+      }),
+    ),
+  ),
   media: v.optional(
     v.array(
       v.strictObject({
@@ -314,7 +330,24 @@ const base64ToBlob = (value: string, type = 'application/octet-stream'): Blob =>
 }
 
 function validateRelations(backup: AppBackup): void {
-  const deckIds = new Set(backup.decks.map((deck) => deck.id))
+  const unique = <T>(items: T[], key: (item: T) => string) => {
+    const ids = new Set(items.map(key))
+    if (ids.size !== items.length) throw new Error('Duplicate backup record.')
+    return ids
+  }
+  const deckIds = unique(backup.decks, (deck) => deck.id)
+  unique(backup.reviewLogs, (log) => log.id)
+  unique(backup.media ?? [], (media) => media.id)
+  unique(backup.imports ?? [], (item) => item.id)
+  if (backup.importSources) {
+    const sources = unique(backup.importSources, (source) => source.id)
+    for (const deck of backup.decks)
+      if (deck.sourceId && !sources.has(deck.sourceId))
+        throw new Error('Deck references an unknown source.')
+  }
+  for (const item of backup.imports ?? [])
+    if (!deckIds.has(item.deckId)) throw new Error('Import references an unknown deck.')
+  const questionDecks = new Map(backup.questions.map((question) => [question.id, question.deckId]))
   const questionIds = new Set<string>()
   const sourceKeys = new Set<string>()
   const sourceOrders = new Set<string>()
@@ -338,13 +371,13 @@ function validateRelations(backup: AppBackup): void {
   }
   const stateIds = new Set<string>()
   for (const state of backup.studyStates) {
-    if (!questionIds.has(state.questionId) || !deckIds.has(state.deckId))
+    if (!questionIds.has(state.questionId) || questionDecks.get(state.questionId) !== state.deckId)
       throw new Error('Study state references unknown data.')
     if (stateIds.has(state.questionId)) throw new Error('Duplicate study state.')
     stateIds.add(state.questionId)
   }
   for (const log of backup.reviewLogs) {
-    if (!questionIds.has(log.questionId) || !deckIds.has(log.deckId))
+    if (!questionIds.has(log.questionId) || questionDecks.get(log.questionId) !== log.deckId)
       throw new Error('Review log references unknown data.')
   }
 }
@@ -396,6 +429,15 @@ export async function createBackup(): Promise<AppBackup> {
 }
 
 export async function restoreBackup(value: unknown): Promise<void> {
+  return restoreBackupData(value)
+}
+
+/** Binary attachments are verified file slices, never Base64-expanded in memory. */
+export async function restoreBackupData(
+  value: unknown,
+  attachments?: { sources: Map<string, Blob>; media: Map<string, Blob> },
+  options: BackupOptions = {},
+): Promise<void> {
   const validated = v.parse(BackupSchema, value) as AppBackup
   const parsed: AppBackup = {
     ...validated,
@@ -415,9 +457,11 @@ export async function restoreBackup(value: unknown): Promise<void> {
   const restoredSources: ImportSourceRecord[] = backupSources.map(
     ({ sourceArchiveBase64, ...source }) => ({
       ...source,
-      ...(sourceArchiveBase64
-        ? { sourceArchive: base64ToBlob(sourceArchiveBase64, 'application/zip') }
-        : {}),
+      ...(attachments?.sources.has(source.id)
+        ? { sourceArchive: attachments.sources.get(source.id)! }
+        : sourceArchiveBase64
+          ? { sourceArchive: base64ToBlob(sourceArchiveBase64, 'application/zip') }
+          : {}),
     }),
   )
   parsed.decks = parsed.decks.map((deck) => ({
@@ -427,20 +471,15 @@ export async function restoreBackup(value: unknown): Promise<void> {
   }))
   validateRelations(parsed)
   const mediaIds = new Set((parsed.media ?? []).map((m) => m.id))
-  const restoredMedia = await Promise.all(
-    (parsed.media ?? []).map(async ({ blobBase64, ...item }) => {
-      const blob = base64ToBlob(blobBase64, item.mimeType)
-      const hash = [
-        ...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())),
-      ]
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('')
-      if (hash !== item.id || blob.size !== item.size)
-        throw new Error('Invalid backup media hash or size')
-      if (item.mimeType === 'image/svg+xml') safeAnkiSvg(await blob.text())
-      return { ...item, blob }
-    }),
-  )
+  const restoredMedia: MediaRecord[] = []
+  for (const { blobBase64, ...item } of parsed.media ?? []) {
+    checkBackupCancelled(options)
+    const blob = attachments?.media.get(item.id) ?? base64ToBlob(blobBase64, item.mimeType)
+    if (blob.size !== item.size || (await hashBlob(blob, options)) !== item.id)
+      throw new Error('Invalid backup media hash or size')
+    if (item.mimeType === 'image/svg+xml') safeAnkiSvg(await blob.text())
+    restoredMedia.push({ ...item, blob })
+  }
   for (const record of parsed.questions) {
     const q = record.payload
     if (q.kind !== 'flashcard' || !q.ankiTemplateMode) continue
@@ -450,6 +489,8 @@ export async function restoreBackup(value: unknown): Promise<void> {
     for (const match of (q.prompt.value + q.answer.value).matchAll(/fukushu-media:([a-f0-9]{64})/g))
       if (!mediaIds.has(match[1]!)) throw new Error('Missing backup media')
   }
+  checkBackupCancelled(options)
+  options.onProgress?.({ phase: 'saving', completed: 0, total: 0 })
   const db = await database()
   const tx = db.transaction(
     [
@@ -464,23 +505,42 @@ export async function restoreBackup(value: unknown): Promise<void> {
     ],
     'readwrite',
   )
-  await Promise.all([
-    tx.objectStore('decks').clear(),
-    tx.objectStore('questions').clear(),
-    tx.objectStore('studyStates').clear(),
-    tx.objectStore('reviewLogs').clear(),
-    tx.objectStore('settings').clear(),
-    tx.objectStore('imports').clear(),
-    tx.objectStore('importSources').clear(),
-    tx.objectStore('media').clear(),
-  ])
-  await tx.objectStore('settings').put(parsed.settings)
-  await Promise.all(parsed.decks.map((item) => tx.objectStore('decks').put(item)))
-  await Promise.all(restoredSources.map((item) => tx.objectStore('importSources').put(item)))
-  await Promise.all(parsed.questions.map((item) => tx.objectStore('questions').put(item)))
-  await Promise.all(parsed.studyStates.map((item) => tx.objectStore('studyStates').put(item)))
-  await Promise.all(parsed.reviewLogs.map((item) => tx.objectStore('reviewLogs').put(item)))
-  await Promise.all(restoredMedia.map((item) => tx.objectStore('media').put(item)))
-  await tx.done
+  const abort = () => {
+    try {
+      tx.abort()
+    } catch {
+      /* already finished */
+    }
+  }
+  options.signal?.addEventListener('abort', abort, { once: true })
+  try {
+    checkBackupCancelled(options)
+    await Promise.all([
+      tx.objectStore('decks').clear(),
+      tx.objectStore('questions').clear(),
+      tx.objectStore('studyStates').clear(),
+      tx.objectStore('reviewLogs').clear(),
+      tx.objectStore('settings').clear(),
+      tx.objectStore('imports').clear(),
+      tx.objectStore('importSources').clear(),
+      tx.objectStore('media').clear(),
+    ])
+    await tx.objectStore('settings').put(parsed.settings)
+    for (const item of parsed.decks) await tx.objectStore('decks').put(item)
+    for (const item of restoredSources) await tx.objectStore('importSources').put(item)
+    for (const item of parsed.questions) await tx.objectStore('questions').put(item)
+    for (const item of parsed.studyStates) await tx.objectStore('studyStates').put(item)
+    for (const item of parsed.reviewLogs) await tx.objectStore('reviewLogs').put(item)
+    for (const item of restoredMedia) await tx.objectStore('media').put(item)
+    for (const item of parsed.imports ?? []) await tx.objectStore('imports').put(item)
+    await tx.done
+  } catch (error) {
+    abort()
+    await tx.done.catch(() => {})
+    checkBackupCancelled(options)
+    throw error
+  } finally {
+    options.signal?.removeEventListener('abort', abort)
+  }
   if (parsed.version < 3) await (await import('./apkgStore')).repairLegacyApkg()
 }

@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-11",
+  "environment": "Linux Chromium persistent profile; single run per input; no quota override",
+  "verification": [
+    "UI download, full database deletion, UI restore, all store counts, re-export SHA-256 equality",
+    "Blob.arrayBuffer reads over 4MiB rejected during backup operations, including reloads"
+  ],
+  "limitations": [
+    "Not a total process memory or RSS measurement",
+    "Old JSON restore still parses the complete JSON",
+    "A 600MiB private-context restore returned QuotaExceededError; regular-profile results do not guarantee private-mode support"
+  ],
+  "sourceHashes": {
+    "packages/app/src/application/backup.ts": "a70e4f84d0900fcb20253e6c809fce14cc26bca4b79d8ac36f5e57c6fdc26101",
+    "packages/app/src/application/backupArchive.ts": "b47754edaa076ec2855cca22caba8ef4a0957983e23e88dacd08b8640235ad15",
+    "packages/app/src/application/backupIO.ts": "6c9635a68c333cfca9e44e91cad57224b5f5fcb75c900dec393c4332f6210e9c",
+    "packages/app/src/views/SettingsView.vue": "221e20d33c708d1f2fac14b38d88a6f8e30300131e98ee72926f6cf67172caa9"
+  },
+  "measurements": {
+    "kaishi": {
+      "source": "../../.cache/anki-corpus/kaishi-1.5k.apkg",
+      "syntheticMiB": 0,
+      "browserProfile": "persistent",
+      "counts": {
+        "decks": 1,
+        "questions": 1501,
+        "studyStates": 1501,
+        "reviewLogs": 0,
+        "importSources": 1,
+        "media": 4345,
+        "imports": 1
+      },
+      "storageBefore": {
+        "quota": 10976893165,
+        "usage": 239474925,
+        "usageDetails": {
+          "caches": 3977984,
+          "indexedDB": 235474823,
+          "serviceWorkerRegistrations": 22118
+        }
+      },
+      "bytes": 231443511,
+      "exportMs": 6983,
+      "restoreMs": 15473,
+      "sha256": "60da3f83c6b05948735e727800b17aff99d40ab8a1eecdf3252a1a775c37e44c",
+      "maxBinaryReadBytes": 4194304
+    },
+    "synthetic": {
+      "source": "official fixture + synthetic binary",
+      "syntheticMiB": 600,
+      "browserProfile": "persistent",
+      "counts": {
+        "decks": 2,
+        "questions": 9,
+        "studyStates": 9,
+        "reviewLogs": 36,
+        "importSources": 2,
+        "media": 2,
+        "imports": 2
+      },
+      "storageBefore": {
+        "quota": 11371064087,
+        "usage": 633645847,
+        "usageDetails": {
+          "caches": 4229120,
+          "indexedDB": 629394609,
+          "serviceWorkerRegistrations": 22118
+        }
+      },
+      "bytes": 629243549,
+      "exportMs": 9544,
+      "restoreMs": 4539,
+      "sha256": "5e0f2645dbfd9e0699248468cbbb26dba719fe242c604d18061c5800147d3e32",
+      "maxBinaryReadBytes": 4194304
+    }
+  }
+}

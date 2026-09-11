@@ -71,8 +71,8 @@ test('official 21b: preview, progress, repeat import, backup and offline', async
   expect(await records(page, 'reviewLogs')).toHaveLength(36)
   await page.goto('/settings')
   const download = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'JSONを保存' }).click()
-  const path = test.info().outputPath('apkg.json')
+  await page.getByRole('button', { name: 'バックアップを保存' }).click()
+  const path = test.info().outputPath('apkg.fukushu')
   await (await download).saveAs(path)
   await Promise.all([
     page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()),
@@ -226,8 +226,8 @@ test('HTML cards follow theme and retain an imported light-mode preference', asy
   await expect(page.locator('iframe')).toHaveCount(0)
   await page.goto('/settings')
   const download = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'JSONを保存' }).click()
-  const path = test.info().outputPath('theme.json')
+  await page.getByRole('button', { name: 'バックアップを保存' }).click()
+  const path = test.info().outputPath('theme.fukushu')
   await (await download).saveAs(path)
   await Promise.all([
     page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()),

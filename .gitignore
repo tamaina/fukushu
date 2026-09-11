@@ -6,3 +6,5 @@ test-results/
 .wrangler/
 *.local
 .cache/anki-corpus/
+
+.cache/backup-validation-*/

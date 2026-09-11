@@ -1,12 +1,47 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { Download, Upload, Trash2 } from '@lucide/vue'
 import { clearDatabase, settingsRepository } from '../infrastructure/db/database'
-import { createBackup, restoreBackup } from '../application/backup'
+import { createBackupArchive, restoreBackupFile } from '../application/backupArchive'
+import type { BackupOptions } from '../application/backupIO'
 import { defaultSettings, type SettingsRecord } from '../infrastructure/db/schema'
 const settings = ref<SettingsRecord>({ ...defaultSettings })
 const saved = ref('')
 const error = ref('')
+const busy = ref(false)
+const progress = ref('')
+let controller: AbortController | undefined
+let downloadUrl: string | undefined
+onBeforeUnmount(() => {
+  controller?.abort()
+  if (downloadUrl) URL.revokeObjectURL(downloadUrl)
+})
+function beginBackup(): BackupOptions {
+  busy.value = true
+  error.value = ''
+  progress.value = $locale.value.sfc.backupReading
+  controller = new AbortController()
+  return {
+    signal: controller.signal,
+    onProgress: ({ phase, completed, total }) => {
+      const label =
+        phase === 'saving'
+          ? $locale.value.sfc.backupSaving
+          : phase === 'checking'
+            ? $locale.value.sfc.backupChecking
+            : $locale.value.sfc.backupReading
+      progress.value = total ? `${label} ${Math.floor((completed / total) * 100)}%` : label
+    },
+  }
+}
+function backupFailed(reason: unknown): void {
+  progress.value = ''
+  if (reason instanceof globalThis.DOMException && reason.name === 'AbortError') return
+  error.value =
+    reason instanceof globalThis.DOMException && reason.name === 'QuotaExceededError'
+      ? $locale.value.sfc.backupQuota
+      : $locale.value.sfc.backupFailed
+}
 let loaded = false
 let loadedLocale: SettingsRecord['locale'] = 'ja'
 onMounted(async () => {
@@ -33,24 +68,36 @@ function applyTheme(): void {
     settings.value.theme === 'system' ? '' : settings.value.theme
 }
 async function download(): Promise<void> {
-  const value = await createBackup()
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }),
-  )
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `fukushu-backup-${value.exportedAt.slice(0, 10)}.json`
-  anchor.click()
-  URL.revokeObjectURL(url)
+  if (busy.value) return
+  try {
+    const file = await createBackupArchive(beginBackup())
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl)
+    downloadUrl = URL.createObjectURL(file)
+    const anchor = document.createElement('a')
+    anchor.href = downloadUrl
+    anchor.download = `fukushu-backup-${new Date().toISOString().slice(0, 10)}.fukushu`
+    anchor.click()
+    // Keep the URL alive until the next export or unmount; immediate revocation can
+    // race a large browser download.
+    progress.value = $locale.value.sfc.backupDownloaded
+  } catch (reason) {
+    backupFailed(reason)
+  } finally {
+    busy.value = false
+    controller = undefined
+  }
 }
 async function upload(file?: File): Promise<void> {
-  if (!file) return
-  error.value = ''
+  if (!file || busy.value) return
   try {
-    await restoreBackup(JSON.parse(await file.text()) as unknown)
+    await restoreBackupFile(file, beginBackup())
+    sessionStorage.removeItem('fukushu-study-session-v1')
     location.reload()
-  } catch {
-    error.value = $locale.value.sfc.invalidBackup
+  } catch (reason) {
+    backupFailed(reason)
+  } finally {
+    busy.value = false
+    controller = undefined
   }
 }
 async function removeAll(): Promise<void> {
@@ -68,7 +115,7 @@ async function removeAll(): Promise<void> {
       </div>
       <span aria-live="polite" class="muted">{{ saved }}</span>
     </div>
-    <section class="settings-section">
+    <section class="settings-section" :inert="busy">
       <h2>{{ $locale.sfc.study }}</h2>
       <label
         >{{ $locale.sfc.retention }}
@@ -115,7 +162,7 @@ async function removeAll(): Promise<void> {
         }}</label
       >
     </section>
-    <section class="settings-section">
+    <section class="settings-section" :inert="busy">
       <h2>{{ $locale.sfc.appearance }}</h2>
       <label
         >{{ $locale.sfc.theme
@@ -136,22 +183,31 @@ async function removeAll(): Promise<void> {
       <h2>{{ $locale.sfc.backup }}</h2>
       <p>{{ $locale.sfc.backupIntro }}</p>
       <div class="actions">
-        <button @click="download"><Download aria-hidden="true" />{{ $locale.sfc.saveJson }}</button
+        <button :disabled="busy" @click="download">
+          <Download aria-hidden="true" />{{ $locale.sfc.saveBackup }}</button
         ><label class="button secondary"
-          ><Upload aria-hidden="true" />{{ $locale.sfc.restoreJson
+          ><Upload aria-hidden="true" />{{ $locale.sfc.restoreBackup
           }}<input
             class="visually-hidden"
             type="file"
-            accept="application/json,.json"
+            accept="application/json,.json,.fukushu"
+            :disabled="busy"
             @change="upload(($event.target as HTMLInputElement).files?.[0])"
         /></label>
+      </div>
+      <p v-if="progress" role="status">{{ progress }}</p>
+      <div v-if="busy">
+        <progress :aria-label="progress"></progress>
+        <button class="secondary" @click="controller?.abort()">
+          {{ $locale.sfc.cancelBackup }}
+        </button>
       </div>
       <p v-if="error" class="message error" role="alert">{{ error }}</p>
     </section>
     <section class="danger-zone">
       <h2>{{ $locale.sfc.deleteAll }}</h2>
       <p>{{ $locale.sfc.deleteAllIntro }}</p>
-      <button class="danger" @click="removeAll">
+      <button class="danger" :disabled="busy" @click="removeAll">
         <Trash2 aria-hidden="true" />{{ $locale.sfc.deleteAllButton }}
       </button>
     </section>
@@ -178,9 +234,16 @@ language: 言語
 japanese: 日本語
 english: English
 backup: バックアップ
-backupIntro: 問題集と学習履歴をJSONへ保存し、別のブラウザで復元できます。
-saveJson: JSONを保存
-restoreJson: JSONから復元
+backupIntro: 問題集・画像・音声・学習履歴・設定を1つのバックアップファイルへ保存します。以前のJSONも復元できます。復元すると現在のデータを置き換えます。
+saveBackup: バックアップを保存
+restoreBackup: バックアップから復元
+backupReading: データを読み込んでいます
+backupChecking: ファイルを検査しています
+backupSaving: データを復元しています
+backupDownloaded: バックアップのダウンロードを開始しました。
+backupQuota: 保存容量が不足しています。空き容量を増やすか、別の端末で復元してください。
+backupFailed: バックアップを処理できませんでした。ファイルの破損や、端末の空き容量を確認してください。
+cancelBackup: キャンセル
 deleteAll: 全データ削除
 deleteAllIntro: ブラウザ内の問題集、学習履歴、設定をすべて削除します。
 deleteAllButton: すべて削除
@@ -209,9 +272,16 @@ language: Language
 japanese: 日本語
 english: English
 backup: Backup
-backupIntro: Save decks and study history as JSON and restore them in another browser.
-saveJson: Save JSON
-restoreJson: Restore JSON
+backupIntro: Save decks, images, audio, study history and settings in one backup file. Older JSON backups can also be restored. Restoring replaces your current data.
+saveBackup: Save backup
+restoreBackup: Restore backup
+backupReading: Reading data
+backupChecking: Checking file
+backupSaving: Restoring data
+backupDownloaded: Backup download started.
+backupQuota: Not enough storage. Free up space or restore on another device.
+backupFailed: Could not process the backup. Check the file for corruption and the available storage on your device.
+cancelBackup: Cancel
 deleteAll: Delete all data
 deleteAllIntro: Delete every deck, study record, and setting in this browser.
 deleteAllButton: Delete everything

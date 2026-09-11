@@ -155,9 +155,9 @@ test('imports a GIFT deck and starts study', async ({ page }) => {
   await expect(page.getByText('100%').first()).toBeVisible()
   await page.goto('/settings')
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'JSONを保存' }).click()
+  await page.getByRole('button', { name: 'バックアップを保存' }).click()
   const download = await downloadPromise
-  const backupPath = test.info().outputPath('backup.json')
+  const backupPath = test.info().outputPath('backup.fukushu')
   await download.saveAs(backupPath)
   page.once('dialog', (dialog) => dialog.accept())
   await Promise.all([
