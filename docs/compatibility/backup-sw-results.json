@@ -76,5 +76,7 @@
       "sha256": "6ba43b9de3b43a95b8aa0e176210df778593559130a17f1c7f80c0518829515b",
       "maxBinaryReadBytes": 4194304
     }
-  }
+  },
+  "measuredCommit": "17e56f3",
+  "followUp": "After these measurements, the first SW activation wait was extended from 10 to 60 seconds for cold production installs. Archive generation and SW transfer code are unchanged."
 }

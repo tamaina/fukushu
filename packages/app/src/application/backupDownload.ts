@@ -32,10 +32,12 @@ export async function downloadBackup(options: BackupOptions = {}): Promise<void>
         cleanup()
         reject(options.signal?.reason)
       }
+      // A fresh production install precaches the application before claiming
+      // clients. Allow slow networks to finish; the user can still cancel.
       const timer = window.setTimeout(() => {
         cleanup()
         reject(new Error('BACKUP_SW_UNAVAILABLE'))
-      }, 10000)
+      }, 60000)
       navigator.serviceWorker.addEventListener('controllerchange', changed, { once: true })
       options.signal?.addEventListener('abort', aborted, { once: true })
       if (navigator.serviceWorker.controller) changed()
