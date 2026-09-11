@@ -449,7 +449,22 @@ onMounted(async () => {
           <h1 data-import-heading tabindex="-1">
             {{ updateDeckId ? $locale.sfc.updateTitle : $locale.sfc.importTitle }}
           </h1>
-          <p v-if="phase === 'input'">{{ $locale.sfc.importIntro }}</p>
+          <p v-if="phase === 'input'">
+            {{ $locale.sfc.importIntro }}<br />
+            <a
+              href="https://github.com/tamaina/fukushu/blob/main/docs/apkg-support.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ $locale.sfc.apkgSupport }}</a
+            >
+            ·
+            <a
+              href="https://github.com/tamaina/fukushu/blob/main/docs/gift-support.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ $locale.sfc.giftSupport }}</a
+            >
+          </p>
         </div>
       </div>
       <template v-if="phase === 'input'">
@@ -955,6 +970,8 @@ onMounted(async () => {
 <locale locale="ja-JP" lang="yaml">
 updateTitle: ファイルから問題集を更新
 importTitle: 問題集を読み込む
+apkgSupport: APKGの対応範囲（GitHub）
+giftSupport: GIFTの対応範囲（GitHub）
 importIntro: GIFT、Anki CSV／TSV、.apkg、またはメディア入りZIPを選択するか、テキストを貼り付けてください。
 chooseFile: ファイルを選択
 fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg（APKGは最大256MiB）
@@ -1000,6 +1017,8 @@ untitledDeck: 名称未設定の問題集
 <locale locale="en-US" lang="yaml">
 updateTitle: Update deck from file
 importTitle: Import deck
+apkgSupport: APKG support (GitHub)
+giftSupport: GIFT support (GitHub)
 importIntro: Choose a GIFT, Anki CSV/TSV, .apkg, or media ZIP file, or paste text.
 chooseFile: Choose file
 fileRequirements: .gift / .txt / .csv / .tsv / .zip / .apkg (APKG up to 256 MiB)
